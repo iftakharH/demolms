@@ -99,6 +99,18 @@ def main() -> int:
             check(f"dashboard KPI: {label}", has(admin, label), dashboard[:200])
         check("dashboard has the 30-day chart", "Revenue, last 30 days" in dashboard)
         check("chart shows revenue bars", admin.locator("div[title*='£']").count() >= 1)
+        for widget in ["Recent orders", "Grading queue", "Quick actions", "Newest learners", "Top courses", "Latest activity"]:
+            check(f"dashboard widget: {widget}", widget in dashboard)
+        check("dashboard KPI: Refunded", "Refunded" in dashboard)
+        check("dashboard KPI: Certificates", "Certificates" in dashboard)
+        check(
+            "recent orders link to order detail",
+            admin.locator("a[href^='/admin/orders/']").count() >= 1,
+        )
+        check(
+            "top courses link to the builder",
+            admin.locator("a[href^='/admin/courses/']").count() >= 1,
+        )
         shot(admin, "p8-01-dashboard")
 
         # ---------------------------------------------------------------------- users

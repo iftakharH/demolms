@@ -3,9 +3,12 @@ import { query, queryOne } from '@/lib/db';
 export interface AdminKpis {
   netRevenuePence: number;
   paidOrders: number;
+  refundedPence: number;
+  refundedOrders: number;
   newUsers30d: number;
   totalLearners: number;
   activeEnrolments: number;
+  enrolments30d: number;
   completionRate: number;
   pendingGrading: number;
   validCertificates: number;
@@ -14,10 +17,12 @@ export interface AdminKpis {
 /** Headline numbers for the admin dashboard. */
 export function adminKpis(): AdminKpis {
   const revenue =
-    queryOne<{ net: number | null; orders: number }>(
-      `SELECT SUM(total_pence - refunded_pence) AS net, COUNT(*) AS orders
+    queryOne<{ net: number | null; orders: number; refunded: number | null; refundedOrders: number }>(
+      `SELECT SUM(total_pence - refunded_pence) AS net, COUNT(*) AS orders,
+              SUM(refunded_pence) AS refunded,
+              SUM(CASE WHEN refunded_pence > 0 THEN 1 ELSE 0 END) AS refundedOrders
          FROM orders WHERE paid_at IS NOT NULL`,
-    ) ?? { net: null, orders: 0 };
+    ) ?? { net: null, orders: 0, refunded: null, refundedOrders: 0 };
 
   const newUsers =
     queryOne<{ n: number }>(
@@ -32,6 +37,11 @@ export function adminKpis(): AdminKpis {
          FROM enrolments WHERE access_revoked = 0`,
     ) ?? { total: 0, done: 0 };
 
+  const enrolments30d =
+    queryOne<{ n: number }>(
+      "SELECT COUNT(*) AS n FROM enrolments WHERE enrolled_at >= datetime('now', '-30 days')",
+    )?.n ?? 0;
+
   const pending =
     queryOne<{ n: number }>(
       `SELECT
@@ -45,9 +55,12 @@ export function adminKpis(): AdminKpis {
   return {
     netRevenuePence: revenue.net ?? 0,
     paidOrders: revenue.orders,
+    refundedPence: revenue.refunded ?? 0,
+    refundedOrders: revenue.refundedOrders,
     newUsers30d: newUsers,
     totalLearners: learners,
     activeEnrolments: enrolments.total,
+    enrolments30d,
     completionRate: enrolments.total > 0 ? Math.round(((enrolments.done ?? 0) / enrolments.total) * 100) : 0,
     pendingGrading: pending,
     validCertificates: certificates,
@@ -85,4 +98,74 @@ export function revenueSeries(days = 30): DailyPoint[] {
     });
   }
   return series;
+}
+
+/* ------------------------------------------------------ dashboard widgets */
+
+export interface DashboardLearner {
+  id: number;
+  name: string;
+  email: string;
+  createdAt: string;
+  lastLoginAt: string | null;
+  enrolments: number;
+  orders: number;
+}
+
+/** Newest learner accounts, for the dashboard's "people" widget. */
+export function newestLearners(limit = 6): DashboardLearner[] {
+  return query<DashboardLearner>(
+    `SELECT u.id, u.name, u.email, u.created_at AS createdAt, u.last_login_at AS lastLoginAt,
+            (SELECT COUNT(*) FROM enrolments e WHERE e.user_id = u.id AND e.access_revoked = 0) AS enrolments,
+            (SELECT COUNT(*) FROM orders o WHERE o.user_id = u.id AND o.paid_at IS NOT NULL) AS orders
+       FROM users u
+      WHERE u.role = 'learner'
+      ORDER BY u.created_at DESC
+      LIMIT ?`,
+    limit,
+  );
+}
+
+export interface DashboardCourse {
+  id: number;
+  slug: string;
+  title: string;
+  status: string;
+  updatedAt: string;
+  enrolments: number;
+  revenuePence: number;
+}
+
+/** Courses ordered by live enrolments, for the dashboard's catalogue widget. */
+export function topCoursesByEnrolment(limit = 5): DashboardCourse[] {
+  return query<DashboardCourse>(
+    `SELECT c.id, c.slug, c.title, c.status, c.updated_at AS updatedAt,
+            (SELECT COUNT(*) FROM enrolments e WHERE e.course_id = c.id AND e.access_revoked = 0) AS enrolments,
+            (SELECT COALESCE(SUM(o.total_pence - o.refunded_pence), 0) FROM orders o
+              WHERE o.course_id = c.id AND o.paid_at IS NOT NULL) AS revenuePence
+       FROM courses c
+      ORDER BY enrolments DESC, c.updated_at DESC
+      LIMIT ?`,
+    limit,
+  );
+}
+
+export interface DashboardAuditEntry {
+  id: number;
+  action: string;
+  actorEmail: string;
+  actorRole: string;
+  summary: string;
+  createdAt: string;
+}
+
+/** Latest audit entries, for the dashboard's activity widget. */
+export function recentAuditEntries(limit = 6): DashboardAuditEntry[] {
+  return query<DashboardAuditEntry>(
+    `SELECT id, action, actor_email AS actorEmail, actor_role AS actorRole, summary, created_at AS createdAt
+       FROM audit_log
+      ORDER BY created_at DESC, id DESC
+      LIMIT ?`,
+    limit,
+  );
 }
