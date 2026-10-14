@@ -14,11 +14,11 @@ const NAV: SiteNavItem[] = [
 ];
 
 /** Public site header. Server component: reads the session for the account menu. */
-export async function SiteHeader() {
+export async function SiteHeader({ wide = false }: { wide?: boolean } = {}) {
   const user = await getCurrentUser();
 
   return (
-    <GlassHeader>
+    <GlassHeader wide={wide}>
       <div className="flex items-center gap-8">
         <Brand />
         <NavLinks items={NAV} />

@@ -15,10 +15,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   return (
     <div className="flex min-h-full flex-col">
-      <SiteHeader />
+      <SiteHeader wide />
       {user.role === 'auditor' ? (
         <div className="no-print border-b border-amber-200 bg-warning-soft">
-          <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 py-2.5 text-sm text-amber-900 sm:px-6">
+          <div className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-amber-900 sm:px-6 lg:px-8 2xl:px-10">
             <Eye className="size-4 shrink-0" aria-hidden />
             <p>
               You are signed in as an <strong>auditor</strong>: the whole admin area is visible but
@@ -27,14 +27,18 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           </div>
         </div>
       ) : null}
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:flex-row">
-        <aside className="lg:w-56 lg:shrink-0">
+      {/*
+        Admin console is desktop-first: content spans the full viewport width here,
+        unlike the learner shell which stays capped for reading comfort.
+      */}
+      <div className="flex w-full flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:flex-row lg:gap-8 lg:px-8 2xl:px-10">
+        <aside className="lg:w-56 lg:shrink-0 xl:w-60">
           <AdminNav items={items} />
         </aside>
         <main className="min-w-0 flex-1">{children}</main>
       </div>
       <footer className="no-print border-t border-line bg-surface">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 text-xs text-ink-500 sm:px-6">
+        <div className="flex w-full items-center justify-between gap-4 px-4 py-4 text-xs text-ink-500 sm:px-6 lg:px-8 2xl:px-10">
           <span>demolms admin console - local demo</span>
           <Link href="/" className="hover:text-ink-800">
             Back to the shop front

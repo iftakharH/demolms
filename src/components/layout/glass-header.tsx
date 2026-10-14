@@ -15,7 +15,7 @@ const CONDENSE_DISTANCE = 140;
  * never re-renders React. The header reserves 4.5rem of space either way, so the bar
  * can float without covering the page below it.
  */
-export function GlassHeader({ children }: { children: ReactNode }) {
+export function GlassHeader({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
   const barRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -109,7 +109,9 @@ export function GlassHeader({ children }: { children: ReactNode }) {
 
           <div
             data-nav-row
-            className="relative mx-auto flex h-full w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6"
+            className={`relative mx-auto flex h-full w-full items-center justify-between gap-4 px-4 sm:px-6 ${
+              wide ? 'lg:px-8 2xl:px-10' : 'max-w-6xl'
+            }`}
           >
             {children}
           </div>
