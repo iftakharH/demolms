@@ -26,6 +26,7 @@ export interface CourseSettingsValues {
   certificateEnabled: boolean;
   requiresQuizPass: boolean;
   requiresAssignments: boolean;
+  featured: boolean;
 }
 
 export function CourseSettingsForm({
@@ -223,6 +224,11 @@ export function CourseSettingsForm({
             name="requires_assignments"
             defaultChecked={values.requiresAssignments}
             label="Require assignments to be graded for completion"
+          />
+          <Checkbox
+            name="featured"
+            defaultChecked={values.featured}
+            label="Feature on the home page (published courses only)"
           />
         </fieldset>
       </div>

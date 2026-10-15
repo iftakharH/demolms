@@ -2,6 +2,7 @@ import Link from 'next/link';
 import {
   ArrowDown,
   ArrowUp,
+  Copy,
   Eye,
   FileText,
   HelpCircle,
@@ -14,14 +15,18 @@ import {
 } from 'lucide-react';
 import type { AdminSection } from '@/lib/queries/admin-courses';
 import { Badge } from '@/components/ui/badge';
+import { InlineRename } from '@/components/admin/inline-rename';
 import { formatDuration } from '@/lib/format';
 import {
   createLessonAction,
   createSectionAction,
   deleteLessonAction,
   deleteSectionAction,
+  duplicateLessonAction,
+  duplicateSectionAction,
   moveLessonAction,
   moveSectionAction,
+  renameLessonAction,
   updateSectionAction,
 } from '@/lib/actions/admin-course-actions';
 
@@ -72,19 +77,13 @@ export function SectionManager({
             <span className="badge bg-ink-200 text-ink-700">Section {index + 1}</span>
 
             {canWrite ? (
-              <form action={updateSectionAction} className="flex min-w-0 flex-1 items-center gap-2">
-                <input type="hidden" name="slug" value={slug} />
-                <input type="hidden" name="section_id" value={section.id} />
-                <input
-                  name="title"
-                  defaultValue={section.title}
-                  className="input h-9 min-w-0 flex-1 py-1 text-sm"
-                  aria-label={`Section ${index + 1} title`}
-                />
-                <button type="submit" className="btn-secondary btn-sm">
-                  Rename
-                </button>
-              </form>
+              <InlineRename
+                action={updateSectionAction}
+                fields={{ slug, section_id: section.id }}
+                value={section.title}
+                label={`Section ${index + 1} title`}
+                className="flex-1"
+              />
             ) : (
               <p className="min-w-0 flex-1 truncate text-sm font-semibold text-ink-900">{section.title}</p>
             )}
@@ -112,6 +111,13 @@ export function SectionManager({
                     <ArrowDown className="size-4" aria-hidden />
                   </button>
                 </form>
+                <form action={duplicateSectionAction}>
+                  <input type="hidden" name="slug" value={slug} />
+                  <input type="hidden" name="section_id" value={section.id} />
+                  <button type="submit" className="btn-ghost btn-sm px-2" aria-label="Duplicate section">
+                    <Copy className="size-4" aria-hidden />
+                  </button>
+                </form>
                 <form action={deleteSectionAction}>
                   <input type="hidden" name="slug" value={slug} />
                   <input type="hidden" name="section_id" value={section.id} />
@@ -133,10 +139,19 @@ export function SectionManager({
                   </span>
 
                   <div className="min-w-0 flex-1">
-                    <p className="flex items-center gap-2 text-sm font-medium text-ink-900">
-                      <span className="truncate">{lesson.title}</span>
+                    <div className="flex items-center gap-2">
+                      {canWrite ? (
+                        <InlineRename
+                          action={renameLessonAction}
+                          fields={{ slug, lesson_id: lesson.id }}
+                          value={lesson.title}
+                          label={`Lesson title: ${lesson.title}`}
+                        />
+                      ) : (
+                        <span className="truncate text-sm font-medium text-ink-900">{lesson.title}</span>
+                      )}
                       {lesson.isPreview ? <Badge tone="brand">Preview</Badge> : null}
-                    </p>
+                    </div>
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-500">
                       <span>{TYPE_LABEL[lesson.type]}</span>
                       <span>{formatDuration(lesson.durationMinutes)}</span>
@@ -201,6 +216,13 @@ export function SectionManager({
                             disabled={lessonIndex === section.lessons.length - 1}
                           >
                             <ArrowDown className="size-4" aria-hidden />
+                          </button>
+                        </form>
+                        <form action={duplicateLessonAction}>
+                          <input type="hidden" name="slug" value={slug} />
+                          <input type="hidden" name="lesson_id" value={lesson.id} />
+                          <button type="submit" className="btn-ghost btn-sm px-2" aria-label="Duplicate lesson">
+                            <Copy className="size-4" aria-hidden />
                           </button>
                         </form>
                         <form action={deleteLessonAction}>

@@ -83,6 +83,7 @@ const courseSettingsSchema = z.object({
   certificateEnabled: z.boolean(),
   requiresQuizPass: z.boolean(),
   requiresAssignments: z.boolean(),
+  featured: z.boolean(),
 });
 
 export async function createCourseAction(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -152,6 +153,7 @@ export async function updateCourseSettingsAction(
     certificateEnabled: formData.get('certificate_enabled') === 'on',
     requiresQuizPass: formData.get('requires_quiz_pass') === 'on',
     requiresAssignments: formData.get('requires_assignments') === 'on',
+    featured: formData.get('featured') === 'on',
   });
 
   if (!parsed.success) {
@@ -200,6 +202,7 @@ export async function updateCourseSettingsAction(
     'certificate_enabled = ?',
     'requires_quiz_pass = ?',
     'requires_assignments = ?',
+    'featured = ?',
   ];
   const values: unknown[] = [
     data.title,
@@ -216,6 +219,7 @@ export async function updateCourseSettingsAction(
     data.certificateEnabled ? 1 : 0,
     data.requiresQuizPass ? 1 : 0,
     data.requiresAssignments ? 1 : 0,
+    data.featured ? 1 : 0,
   ];
 
   if (thumbnailPath !== undefined) {
@@ -370,6 +374,187 @@ export async function deleteCourseAction(formData: FormData): Promise<void> {
   revalidatePath('/admin/courses');
   revalidatePath('/courses');
   redirect('/admin/courses?deleted=1');
+}
+
+/** Keeps a list action on the same filtered view it was triggered from. */
+function safeBack(formData: FormData, fallback = '/admin/courses'): string {
+  const back = String(formData.get('back') ?? '');
+  return back.startsWith('/admin/courses') ? back : fallback;
+}
+
+/** Star toggle for the "featured on the home page" flag, straight from the list. */
+export async function toggleCourseFeaturedAction(formData: FormData): Promise<void> {
+  const admin = await requireAdminWriter();
+  const slug = String(formData.get('slug') ?? '');
+  const course = courseBySlugOrThrow(slug);
+  const current = queryOne<{ featured: number }>('SELECT featured FROM courses WHERE id = ?', course.id);
+  const next = current?.featured ? 0 : 1;
+
+  run("UPDATE courses SET featured = ?, updated_at = datetime('now') WHERE id = ?", next, course.id);
+  logAudit({
+    actor: { id: admin.id, email: admin.email, role: admin.role },
+    action: AUDIT_ACTIONS.courseUpdated,
+    entityType: 'course',
+    entityId: course.id,
+    summary: `${next ? 'Featured' : 'Unfeatured'} course "${course.title}"`,
+    meta: { featured: Boolean(next) },
+  });
+
+  revalidateCourse(slug);
+  redirect(safeBack(formData));
+}
+
+/* -------------------------------------------------------------- duplication */
+
+interface LessonCopyRow {
+  title: string;
+  type: string;
+  is_preview: number;
+  duration_minutes: number;
+  video_path: string | null;
+  captions_path: string | null;
+  poster_path: string | null;
+  body_md: string | null;
+  quiz_pass_percent: number | null;
+  quiz_max_attempts: number | null;
+  quiz_show_answers: number;
+  assignment_brief_md: string | null;
+  assignment_max_score: number;
+  assignment_allow_files: number;
+}
+
+/** Copies one lesson (plus its quiz questions) into a section. Returns the new id. */
+function copyLesson(
+  lessonId: number,
+  toCourseId: number,
+  toSectionId: number,
+  sortOrder: number,
+  titleSuffix = '',
+): number {
+  const lesson = queryOne<LessonCopyRow>(
+    `SELECT title, type, is_preview, duration_minutes, video_path, captions_path, poster_path,
+            body_md, quiz_pass_percent, quiz_max_attempts, quiz_show_answers,
+            assignment_brief_md, assignment_max_score, assignment_allow_files
+       FROM lessons WHERE id = ?`,
+    lessonId,
+  );
+  if (!lesson) return 0;
+
+  const info = run(
+    `INSERT INTO lessons (course_id, section_id, title, type, sort_order, is_preview, duration_minutes,
+                          video_path, captions_path, poster_path, body_md,
+                          quiz_pass_percent, quiz_max_attempts, quiz_show_answers,
+                          assignment_brief_md, assignment_max_score, assignment_allow_files)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    toCourseId,
+    toSectionId,
+    lesson.title + titleSuffix,
+    lesson.type,
+    sortOrder,
+    lesson.is_preview,
+    lesson.duration_minutes,
+    lesson.video_path,
+    lesson.captions_path,
+    lesson.poster_path,
+    lesson.body_md,
+    lesson.quiz_pass_percent,
+    lesson.quiz_max_attempts,
+    lesson.quiz_show_answers,
+    lesson.assignment_brief_md,
+    lesson.assignment_max_score,
+    lesson.assignment_allow_files,
+  );
+  const newId = Number(info.lastInsertRowid);
+
+  // quiz questions belong to their lesson; learner attempts do not follow a copy
+  const questions = query<{
+    type: string;
+    prompt: string;
+    options_json: string;
+    correct_json: string;
+    explanation: string;
+    points: number;
+    sort_order: number;
+  }>(
+    `SELECT type, prompt, options_json, correct_json, explanation, points, sort_order
+       FROM questions WHERE lesson_id = ? ORDER BY sort_order, id`,
+    lessonId,
+  );
+  for (const question of questions) {
+    run(
+      `INSERT INTO questions (lesson_id, type, prompt, options_json, correct_json, explanation, points, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      newId,
+      question.type,
+      question.prompt,
+      question.options_json,
+      question.correct_json,
+      question.explanation,
+      question.points,
+      question.sort_order,
+    );
+  }
+  return newId;
+}
+
+/** Copies every section/lesson/question from one course into another. */
+function copyCurriculum(fromCourseId: number, toCourseId: number): void {
+  const sections = query<{ id: number; title: string; sort_order: number }>(
+    'SELECT id, title, sort_order FROM sections WHERE course_id = ? ORDER BY sort_order, id',
+    fromCourseId,
+  );
+  for (const section of sections) {
+    const info = run(
+      'INSERT INTO sections (course_id, title, sort_order) VALUES (?, ?, ?)',
+      toCourseId,
+      section.title,
+      section.sort_order,
+    );
+    const newSectionId = Number(info.lastInsertRowid);
+    const lessons = query<{ id: number; sort_order: number }>(
+      'SELECT id, sort_order FROM lessons WHERE section_id = ? ORDER BY sort_order, id',
+      section.id,
+    );
+    for (const lesson of lessons) {
+      copyLesson(lesson.id, toCourseId, newSectionId, lesson.sort_order);
+    }
+  }
+}
+
+/** Duplicate a course (content included) as a fresh draft. */
+export async function duplicateCourseAction(formData: FormData): Promise<void> {
+  const admin = await requireAdminWriter();
+  const slug = String(formData.get('slug') ?? '');
+  const course = courseBySlugOrThrow(slug);
+
+  const newSlug = uniqueSlug(`${course.title} copy`);
+  const info = run(
+    `INSERT INTO courses (slug, title, subtitle, description_md, category_id, instructor_name,
+                          instructor_bio_md, level, price_pence, thumbnail_path, tags, outcomes_md,
+                          requirements_md, status, featured, certificate_enabled, requires_quiz_pass,
+                          requires_assignments)
+     SELECT ?, title || ' (copy)', subtitle, description_md, category_id, instructor_name,
+            instructor_bio_md, level, price_pence, thumbnail_path, tags, outcomes_md,
+            requirements_md, 'draft', 0, certificate_enabled, requires_quiz_pass, requires_assignments
+       FROM courses WHERE id = ?`,
+    newSlug,
+    course.id,
+  );
+  const newId = Number(info.lastInsertRowid);
+  copyCurriculum(course.id, newId);
+
+  logAudit({
+    actor: { id: admin.id, email: admin.email, role: admin.role },
+    action: AUDIT_ACTIONS.courseCreated,
+    entityType: 'course',
+    entityId: newId,
+    summary: `Duplicated course "${course.title}" as a new draft`,
+    meta: { from: course.slug, to: newSlug },
+  });
+
+  revalidateCourse(slug);
+  revalidatePath('/admin/courses');
+  redirect(`/admin/courses/${newSlug}?copied=1`);
 }
 
 /* ------------------------------------------------------------------ sections */
@@ -576,6 +761,108 @@ export async function deleteLessonAction(formData: FormData): Promise<void> {
   });
   revalidateCourse(slug);
   redirect(`/admin/courses/${slug}#sections`);
+}
+
+/** Quick inline rename from the curriculum list (no full editor round-trip). */
+export async function renameLessonAction(formData: FormData): Promise<void> {
+  const admin = await requireAdminWriter();
+  const slug = String(formData.get('slug') ?? '');
+  const lessonId = Number.parseInt(String(formData.get('lesson_id') ?? ''), 10);
+  const title = z.string().trim().min(2, 'Give the lesson a title').max(180).safeParse(formData.get('title'));
+  const course = courseBySlugOrThrow(slug);
+
+  if (!title.success) {
+    redirect(`/admin/courses/${slug}?error=${encodeURIComponent(title.error.issues[0].message)}#sections`);
+  }
+
+  run(
+    "UPDATE lessons SET title = ?, updated_at = datetime('now') WHERE id = ? AND course_id = ?",
+    title.data,
+    lessonId,
+    course.id,
+  );
+  logAudit({
+    actor: { id: admin.id, email: admin.email, role: admin.role },
+    action: AUDIT_ACTIONS.lessonUpdated,
+    entityType: 'lesson',
+    entityId: lessonId,
+    summary: `Renamed lesson to "${title.data}"`,
+  });
+  revalidateCourse(slug);
+  redirect(`/admin/courses/${slug}?saved=1#sections`);
+}
+
+/** Duplicate a lesson (quiz questions included) directly below the original. */
+export async function duplicateLessonAction(formData: FormData): Promise<void> {
+  const admin = await requireAdminWriter();
+  const slug = String(formData.get('slug') ?? '');
+  const lessonId = Number.parseInt(String(formData.get('lesson_id') ?? ''), 10);
+  const course = courseBySlugOrThrow(slug);
+
+  const lesson = queryOne<{ id: number; section_id: number; title: string; sort_order: number }>(
+    'SELECT id, section_id, title, sort_order FROM lessons WHERE id = ? AND course_id = ?',
+    lessonId,
+    course.id,
+  );
+  if (!lesson) redirect(`/admin/courses/${slug}#sections`);
+
+  run(
+    'UPDATE lessons SET sort_order = sort_order + 1 WHERE section_id = ? AND sort_order > ?',
+    lesson.section_id,
+    lesson.sort_order,
+  );
+  copyLesson(lesson.id, course.id, lesson.section_id, lesson.sort_order + 1, ' (copy)');
+
+  logAudit({
+    actor: { id: admin.id, email: admin.email, role: admin.role },
+    action: AUDIT_ACTIONS.lessonCreated,
+    entityType: 'course',
+    entityId: course.id,
+    summary: `Duplicated lesson "${lesson.title}" in "${course.title}"`,
+  });
+  revalidateCourse(slug);
+  redirect(`/admin/courses/${slug}?saved=1#sections`);
+}
+
+/** Duplicate a whole section (lessons and quiz questions included) at the end. */
+export async function duplicateSectionAction(formData: FormData): Promise<void> {
+  const admin = await requireAdminWriter();
+  const slug = String(formData.get('slug') ?? '');
+  const sectionId = Number.parseInt(String(formData.get('section_id') ?? ''), 10);
+  const course = courseBySlugOrThrow(slug);
+
+  const section = queryOne<{ id: number; title: string }>(
+    'SELECT id, title FROM sections WHERE id = ? AND course_id = ?',
+    sectionId,
+    course.id,
+  );
+  if (!section) redirect(`/admin/courses/${slug}#sections`);
+
+  const next =
+    (queryOne<{ n: number | null }>('SELECT MAX(sort_order) AS n FROM sections WHERE course_id = ?', course.id)
+      ?.n ?? -1) + 1;
+  const info = run(
+    'INSERT INTO sections (course_id, title, sort_order) VALUES (?, ?, ?)',
+    course.id,
+    `${section.title} (copy)`,
+    next,
+  );
+  const newSectionId = Number(info.lastInsertRowid);
+  const lessons = query<{ id: number; sort_order: number }>(
+    'SELECT id, sort_order FROM lessons WHERE section_id = ? ORDER BY sort_order, id',
+    section.id,
+  );
+  for (const lesson of lessons) copyLesson(lesson.id, course.id, newSectionId, lesson.sort_order);
+
+  logAudit({
+    actor: { id: admin.id, email: admin.email, role: admin.role },
+    action: AUDIT_ACTIONS.sectionCreated,
+    entityType: 'course',
+    entityId: course.id,
+    summary: `Duplicated section "${section.title}" in "${course.title}"`,
+  });
+  revalidateCourse(slug);
+  redirect(`/admin/courses/${slug}?saved=1#sections`);
 }
 
 /* ------------------------------------------------------------------ lesson editor */

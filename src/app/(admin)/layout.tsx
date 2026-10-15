@@ -15,7 +15,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   return (
     <div className="flex min-h-full flex-col">
-      <SiteHeader wide />
+      <SiteHeader wide showAnnouncement={false} />
       {user.role === 'auditor' ? (
         <div className="no-print border-b border-amber-200 bg-warning-soft">
           <div className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-amber-900 sm:px-6 lg:px-8 2xl:px-10">

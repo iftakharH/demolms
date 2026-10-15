@@ -9,6 +9,7 @@ import {
   Clock,
   GraduationCap,
   Heart,
+  PauseCircle,
   PlayCircle,
   RefreshCw,
   SquarePen,
@@ -27,6 +28,7 @@ import { fileUrl } from '@/lib/file-url';
 import { formatDuration, formatPenceShort, formatTotalDuration, timeAgo } from '@/lib/format';
 import { APP_URL, DEV_TOOLS } from '@/lib/env';
 import { enrolFreeAction } from '@/lib/actions/enrolment-actions';
+import { platformSettings } from '@/lib/settings';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,6 +69,7 @@ export default async function CoursePage({
   const viewer = await getCurrentUser();
   const staffPreview = query.preview === '1' && Boolean(viewer && isStaffRole(viewer.role));
   const staffViewer = Boolean(viewer && isStaffRole(viewer.role));
+  const paused = platformSettings().enrolmentsPaused;
 
   const course = courseBySlug(slug, { includeUnpublished: staffPreview });
   if (!course) notFound();
@@ -148,6 +151,14 @@ export default async function CoursePage({
             Users
           </Link>{' '}
           to act on their behalf.
+        </div>
+      ) : null}
+
+      {query.paused === '1' && !staffViewer ? (
+        <div className="mt-5 flex items-center gap-2.5 rounded-2xl border border-amber-200 bg-warning-soft px-4 py-3 text-sm text-amber-900">
+          <PauseCircle className="size-5 shrink-0 text-amber-600" aria-hidden />
+          New enrolments are paused at the moment. Existing learners keep their access - check back
+          soon.
         </div>
       ) : null}
 
@@ -382,7 +393,12 @@ export default async function CoursePage({
                     )}
 
                     <div className="mt-5 space-y-2">
-                      {course.pricePence === 0 ? (
+                      {paused ? (
+                        <p className="flex items-center gap-2.5 rounded-xl border border-amber-200 bg-warning-soft px-3.5 py-3 text-sm text-amber-900">
+                          <PauseCircle className="size-4 shrink-0" aria-hidden />
+                          New enrolments are paused right now.
+                        </p>
+                      ) : course.pricePence === 0 ? (
                         <form action={enrolFreeAction}>
                           <input type="hidden" name="slug" value={course.slug} />
                           <button type="submit" className="btn-primary btn-lg w-full">
@@ -482,7 +498,12 @@ export default async function CoursePage({
                   {course.pricePence > 0 ? 'lifetime access' : 'no card needed'}
                 </p>
               </div>
-              {course.pricePence === 0 ? (
+              {paused ? (
+                <p className="flex flex-1 items-center gap-2 text-xs text-amber-900">
+                  <PauseCircle className="size-4 shrink-0" aria-hidden />
+                  New enrolments are paused right now.
+                </p>
+              ) : course.pricePence === 0 ? (
                 <form action={enrolFreeAction} className="flex-1">
                   <input type="hidden" name="slug" value={course.slug} />
                   <button type="submit" className="btn-primary w-full">

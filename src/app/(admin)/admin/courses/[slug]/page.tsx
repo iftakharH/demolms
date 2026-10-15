@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import {
   Archive,
   ArrowLeft,
+  Copy,
   Eye,
   EyeOff,
   HelpCircle,
@@ -19,6 +20,7 @@ import { SectionManager } from '@/components/admin/section-manager';
 import { CourseStatusBadge } from '@/components/ui/badge';
 import {
   deleteCourseAction,
+  duplicateCourseAction,
   setCourseStatusAction,
 } from '@/lib/actions/admin-course-actions';
 import { queryOne } from '@/lib/db';
@@ -44,6 +46,7 @@ interface BuilderCourse {
   requirements_md: string;
   status: 'draft' | 'published' | 'archived';
   thumbnail_path: string | null;
+  featured: number;
   certificate_enabled: number;
   requires_quiz_pass: number;
   requires_assignments: number;
@@ -74,6 +77,7 @@ export default async function CourseBuilderPage({
 
   const error = typeof query.error === 'string' ? query.error : null;
   const saved = query.saved === '1';
+  const copied = query.copied === '1';
 
   return (
     <div className="space-y-6">
@@ -106,6 +110,14 @@ export default async function CourseBuilderPage({
 
           {canWrite ? (
             <>
+              <form action={duplicateCourseAction}>
+                <input type="hidden" name="slug" value={course.slug} />
+                <button type="submit" className="btn-secondary">
+                  <Copy className="size-4" aria-hidden />
+                  Duplicate
+                </button>
+              </form>
+
               {course.status !== 'published' ? (
                 <form action={setCourseStatusAction}>
                   <input type="hidden" name="slug" value={course.slug} />
@@ -159,6 +171,11 @@ export default async function CourseBuilderPage({
           Saved.
         </p>
       ) : null}
+      {copied && !error ? (
+        <p className="rounded-xl border border-emerald-200 bg-success-soft px-4 py-3 text-sm text-emerald-800">
+          Duplicated as a fresh draft - edit the copy freely, the original is untouched.
+        </p>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Sections" value={String(sections.length)} />
@@ -187,8 +204,19 @@ export default async function CourseBuilderPage({
           certificateEnabled: Boolean(course.certificate_enabled),
           requiresQuizPass: Boolean(course.requires_quiz_pass),
           requiresAssignments: Boolean(course.requires_assignments),
+          featured: Boolean(course.featured),
         }}
       />
+
+      {sections.length === 0 ? (
+        <div className="card border-brand-200 bg-brand-50/60 p-5">
+          <h2 className="section-title">Get started</h2>
+          <p className="mt-1 text-sm text-ink-600">
+            This course has no content yet. Add your first section below, then quick-add lessons
+            inside it - a title and a type now, the details later.
+          </p>
+        </div>
+      ) : null}
 
       <SectionManager slug={course.slug} sections={sections} canWrite={canWrite} />
 

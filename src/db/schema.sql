@@ -57,6 +57,14 @@ CREATE TABLE IF NOT EXISTS rate_limits (
   blocked_until     TEXT
 );
 
+-- ---------------------------------------------------------------- platform
+
+CREATE TABLE IF NOT EXISTS settings (
+  key        TEXT PRIMARY KEY,                  -- e.g. 'announcement_text'
+  value      TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- ---------------------------------------------------------------- catalog
 
 CREATE TABLE IF NOT EXISTS categories (

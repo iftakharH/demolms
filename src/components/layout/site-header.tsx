@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Brand } from './brand';
+import { AnnouncementBanner } from './announcement-banner';
 import { GlassHeader } from './glass-header';
 import { SupportBanner } from './support-banner';
 import { NavLinks, type SiteNavItem } from './nav-links';
@@ -16,7 +17,13 @@ const NAV: SiteNavItem[] = [
 ];
 
 /** Public site header. Server component: reads the session for the account menu. */
-export async function SiteHeader({ wide = false }: { wide?: boolean } = {}) {
+export async function SiteHeader({
+  wide = false,
+  showAnnouncement = true,
+}: {
+  wide?: boolean;
+  showAnnouncement?: boolean;
+} = {}) {
   const user = await getCurrentUser();
   const staff = Boolean(user && isStaffRole(user.role));
 
@@ -61,6 +68,7 @@ export async function SiteHeader({ wide = false }: { wide?: boolean } = {}) {
           <MobileNav signedIn={Boolean(user)} staff={staff} />
         </div>
       </GlassHeader>
+      {showAnnouncement ? <AnnouncementBanner /> : null}
       <SupportBanner />
     </>
   );

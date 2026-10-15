@@ -6,6 +6,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { notify } from '@/lib/notify';
 import { queryOne, run } from '@/lib/db';
 import { isStaffRole } from '@/lib/types';
+import { platformSettings } from '@/lib/settings';
 
 /**
  * Free one-click enrolment.
@@ -21,6 +22,11 @@ export async function enrolFreeAction(formData: FormData): Promise<void> {
   // Staff accounts never enrol - support access is how they act for a learner.
   if (isStaffRole(user.role)) {
     redirect(`/courses/${slug}?staff=1`);
+  }
+
+  // platform pause: no new enrolments while paused
+  if (platformSettings().enrolmentsPaused) {
+    redirect(`/courses/${slug}?paused=1`);
   }
 
   const course = queryOne<{ id: number; title: string; price_pence: number; slug: string }>(

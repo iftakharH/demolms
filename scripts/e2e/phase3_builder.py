@@ -101,21 +101,29 @@ def main() -> int:
         # ---------------------------------------------------------- create course
         page.goto(f"{BASE}/admin/courses/new")
         page.wait_for_load_state("networkidle")
+        check(
+            "new course only asks for a title",
+            page.locator("#title").count() == 1
+            and page.locator("#category_id").count() == 0
+            and page.locator("#price").count() == 0,
+        )
         page.fill("#title", "Build a CLI Tool with Node.js")
-        page.select_option("#category_id", label="Software Development")
-        page.select_option("#level", label="Intermediate")
-        page.fill("#price", "39.50")
         page.click("button:has-text('Create draft course')")
         page.wait_for_url("**/admin/courses/build-a-cli-tool-with-node-js*", timeout=20000)
         check("new course gets a slug from the title", "build-a-cli-tool-with-node-js" in page.url, page.url)
         check("new course starts as a draft", has(page, "Draft"))
         check("publishing checklist is shown", has(page, "Publishing checklist"))
+        check("empty course shows the get started prompt", has(page, "Get started"))
 
         # -------------------------------------------------------- settings + thumbnail
+        page.select_option("#category_id", label="Software Development")
+        page.select_option("#level", label="Intermediate")
+        page.fill("#price", "39.50")
         page.fill("#subtitle", "Ship a real command line tool with tests and CI")
         page.fill("#outcomes", "Parse arguments safely\nWrite integration tests\nPublish to npm")
         page.fill("#tags", "nodejs, cli, testing")
         page.set_input_files("input[name=thumbnail]", os.path.join(ROOT, "public", "uploads", "thumbnails", "sql-for-analysts.svg"))
+        page.check("input[name=featured]")
         page.click("button:has-text('Save settings')")
         settle(page, text="Course settings saved")
         check("settings save round-trips", has(page, "Course settings saved"), body(page)[:200])
@@ -125,16 +133,26 @@ def main() -> int:
         check("subtitle persisted", page.input_value("#subtitle") == "Ship a real command line tool with tests and CI", page.input_value("#subtitle"))
         check("price persisted as 39.50", page.input_value("#price") == "39.50", page.input_value("#price"))
         check("thumbnail persisted", page.locator("img[src*='/uploads/']").count() > 0)
+        check("featured checkbox persisted", page.is_checked("input[name=featured]"))
 
         # ------------------------------------------------------------- sections
         page.fill("input[name=title][placeholder='New section title']", "Getting started")
         page.click("button:has-text('Add section')")
         settle(page, text="Getting started")
-        check(
-            "section added",
-            page.locator("input[name=title][value='Getting started']").count() >= 1,
-            body(page)[:200],
-        )
+        check("section added", has(page, "Getting started"), body(page)[:200])
+
+        # click-to-edit rename
+        page.click("button[title='Click to rename'] >> nth=0")
+        page.fill("input[aria-label*='Section 1 title']", "Getting started properly")
+        page.click("form:has(input[aria-label*='Section 1 title']) button:has-text('Save')")
+        settle(page, text="Getting started properly")
+        check("click-to-edit renames a section", has(page, "Getting started properly"), body(page)[:200])
+
+        # duplicate section (copies lessons too; none yet, so it is empty)
+        page.click("button[aria-label='Duplicate section']")
+        settle(page, text="(copy)")
+        check("section can be duplicated", has(page, "(copy)"), body(page)[:300])
+        check("duplicated section is counted", has(page, "2 sections"), body(page)[:200])
 
         page.fill("input[placeholder='New lesson title'] >> nth=0", "Welcome and setup")
         page.select_option("select[name=type] >> nth=0", "video")
@@ -326,6 +344,45 @@ def main() -> int:
         check("public page shows the price to visitors", "£39.50" in visitor_body, visitor_body[:300])
         visitor_context.close()
         assert len(results) > checks_before
+
+        # ------------------------------------------- duplication + list quick actions
+        page.goto(f"{BASE}/admin/courses/build-a-cli-tool-with-node-js")
+        page.wait_for_load_state("networkidle")
+        page.click("button[aria-label='Duplicate lesson']")
+        settle(page, text="(copy)")
+        check("lesson can be duplicated", has(page, "(copy)"), body(page)[:300])
+
+        page.click("button:has-text('Duplicate')")
+        page.wait_for_url("**/admin/courses/build-a-cli-tool-with-node-js-copy*", timeout=20000)
+        check("course can be duplicated", "-copy" in page.url, page.url)
+        check("duplicated course starts as a draft", has(page, "Draft") and has(page, "Duplicated as a fresh draft"), body(page)[:300])
+        check("duplicated course carries its content", has(page, "Getting started properly"), body(page)[:600])
+
+        page.goto(f"{BASE}/admin/courses")
+        page.wait_for_load_state("networkidle")
+        check(
+            "list shows the featured star",
+            page.locator("button[aria-label='Unfeature Build a CLI Tool with Node.js']").count() == 1,
+        )
+        page.click("button[aria-label='Unfeature Build a CLI Tool with Node.js']")
+        toggled = False
+        for _ in range(40):
+            if page.locator("button[aria-label='Feature Build a CLI Tool with Node.js']").count() == 1:
+                toggled = True
+                break
+            page.wait_for_timeout(250)
+        check("featured can be toggled from the list", toggled, body(page)[:200])
+
+        page.click("th a:has-text('Price')")
+        for _ in range(40):
+            if "sort=price" in page.url:
+                break
+            page.wait_for_timeout(250)
+        page.wait_for_load_state("networkidle")
+        first_row = page.locator("tbody tr").first.inner_text()
+        check("price sort puts the most expensive first", "Design Systems" in first_row, first_row[:160])
+        page.goto(f"{BASE}/admin/courses")
+        page.wait_for_load_state("networkidle")
 
         # draft staff preview banner (also opens in a new tab)
         page.goto(f"{BASE}/admin/courses/advanced-react-patterns")

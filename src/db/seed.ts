@@ -52,6 +52,7 @@ const TABLES = [
   'auth_tokens',
   'sessions',
   'rate_limits',
+  'settings',
   'users',
 ];
 

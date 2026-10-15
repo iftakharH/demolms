@@ -284,7 +284,9 @@ Deliberately `UNVERIFIED` (honest gaps):
 Requested follow-up: "make the navbar glassmorphism in every pages ... with dynamic effects",
 then "the glassmorphism navbar should be smaller while scrolling the page ... in every device
 view". The site header (shared by the public, learner and admin shells) is glass on every
-page, and it shrinks progressively with the scroll position at every breakpoint.
+page. A second pass, on request, replaced the vertical shrink with a horizontal one: the bar
+keeps its 64px height everywhere and, on desktop, narrows to the width of its own content as
+the page scrolls.
 
 ### What changed
 
@@ -302,18 +304,18 @@ page, and it shrinks progressively with the scroll position at every breakpoint.
   `.nav-pill` / `.dock-pill`, `.sheen`, the keyframes, and `@source not "../../data"`.
 - `.gitignore`: `data/` (see the Turbopack note below).
 
-### Measured shrink (identical on phone, tablet and desktop)
+### Measured behaviour (headless Chromium at 390 / 768 / 1280)
 
-| | at top | fully condensed |
+| viewport | at the top | scrolled |
 | --- | --- | --- |
-| height | 64px | 48px |
-| top offset / radius | 0 / 0 | 8px / 16px |
-| side insets | 0 | 12px phone, 20.5px at 1280px |
-| brand mark | 36px | 31px |
+| 390 | full width, 64px, no radius | full width minus 12px insets, 64px, 16px radius |
+| 768 | full width, 64px | **668px**, centered, 64px, 16px radius |
+| 1280 | full width, 64px | **689px**, centered, 64px, 16px radius |
 
-It interpolates continuously rather than snapping between two states, and the header keeps its
-reserved 4rem, so the page below never shifts - verified: header box 64px and content top 64px
-in both states.
+The desktop width interpolates from full width to the measured content width as the scroll
+position moves through the first 140px (`--condense`), and the height never changes. The
+header reserves 4.5rem, so the floating bar cannot cover the page below it: the header box
+and the content top stay at 72px in every state, and there is no horizontal overflow.
 
 ### Bugs found and fixed while verifying in a browser
 
@@ -327,6 +329,17 @@ in both states.
 4. The dev server crashed mid-run: Turbopack panicked reading the locked `data/demolms.db-shm`
    while Tailwind's scanner was tracking globs. `data/` is now gitignored and excluded with
    `@source not`, so the scanner never touches the SQLite files.
+5. The content-width pass exposed a Chrome trap: a transitioned property whose value comes from
+   a custom property can stay stuck at its old value when only that custom property changes, so
+   the bar kept computing as if `--condense` were 0. `--condense` is written on every scroll
+   frame anyway, so the transitions on the bar were removed and it now tracks the page directly.
+6. A ResizeObserver feedback loop: the observer fired while the bar animated, and re-writing the
+   variables restarted the transitions every frame. Variable writes are now skipped when the
+   value has not changed.
+7. At tablet widths the nav links wrapped, because the content width was measured from an
+   already-squeezed row. The links are `whitespace-nowrap` now, so the measurement is always the
+   natural width. (Verified: children widths 407 + 217, gap 16, padding 48 -> 689px, unchanged
+   between the two states.)
 
 ### Verification
 
@@ -350,6 +363,49 @@ process. Traced to an exact stack (`currentTotp` -> `Authenticator.generate` -> 
 `run_all.py` on a freshly started dev server reports 12/13 for that reason alone, and running
 it again (or opening the MFA page once) gives 13/13.
 
+## Results - admin console pass (2026-10-16)
+
+Requested follow-up: admins control everything from a full-width desktop console, a richer
+dashboard, support access into learner accounts, no learner surfaces for staff, and simpler
+course authoring. Delivered in five phases, one commit each:
+
+1. `ceae7d5` full-width admin shell - the console spans the viewport (the shared glass header
+   gained a `wide` variant); public/learner keep their reading caps.
+2. `396010e` data-heavy dashboard - eight KPIs, 30-day window summary, and six widgets with
+   deep links (recent orders, grading preview, quick actions, newest learners, top courses,
+   latest audit).
+3. `334f94f` support access - "Enter as learner" from the user page and dashboard: a learner
+   session in its own signed cookie, admin session untouched, floating banner with one-click
+   return, entry/exit audited, auditor rejected server-side, forward migration for
+   `sessions.impersonated_by`.
+4. `8c931fe` staff lock-out - `/dashboard`, `/learn/*` and every learner action redirect staff;
+   enrolment/checkout refuse staff with a notice; course pages show a staff panel (edit +
+   enter-as-learner) instead of price/Enrol; new `/admin/settings` holds staff account controls.
+5. Settings + authoring - `settings` table (announcement banner, pause enrolments), categories
+   CRUD with inline rename and reorder, featured toggle (settings form + list star), title-only
+   course creation, inline section/lesson add, click-to-edit titles, duplicate lesson/section/
+   course, and sortable courses list with quick publish/feature/duplicate actions.
+
+### Verification
+
+| Command | Result |
+| --- | --- |
+| `npm run build` | clean - Next.js 16.4 (Turbopack) |
+| `npm run typecheck` | clean |
+| `npm run lint` | clean - 0 errors, 0 warnings |
+| `scripts/e2e/run_all.py` | 13/13 suites, 513+ checks (phase 3 53, phase 8 108) |
+
+Also exercised by hand in a browser: support round-trip (enter, learn, return, sign-out while
+impersonating signs out fully), staff redirects, announcement on the public site, pause notices,
+category CRUD, duplicate/rename flows.
+
+Two environment notes from the long test runs (not app bugs): a headless-Chromium driver
+connection dropped once, and the dev server eventually died with `memory allocation ... failed`
+after hours of serving ~4900 requests. Both are dev-server/test-infrastructure resource issues;
+every suite passes on a fresh `next dev`.
+
+Deliberately `UNVERIFIED`: no real network disconnection test (unchanged from earlier passes);
+the announcement banner and paused states were checked via Playwright, not by hand on a phone.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

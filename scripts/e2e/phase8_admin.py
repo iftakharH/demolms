@@ -345,7 +345,6 @@ def main() -> int:
             learner.wait_for_load_state("networkidle")
             learner.wait_for_timeout(500)
         check("the enrol request was captured", bool(enrol_request.get("data")), str(bool(enrol_request)))
-        learner_context.close()
 
         if enrol_request.get("data"):
             enrol_headers = {
@@ -375,6 +374,119 @@ def main() -> int:
         admin.wait_for_load_state("networkidle")
         check("admin account has no enrolments", has(admin, "Not enrolled in anything yet"), body(admin)[:300])
         check("admin account has no orders", has(admin, "No orders"), body(admin)[:300])
+
+        # ---------------------------------------------- platform controls (settings)
+        admin.goto(f"{BASE}/admin/settings")
+        admin.wait_for_load_state("networkidle")
+        check(
+            "settings shows platform controls",
+            has(admin, "Platform controls") and has(admin, "Announcement banner"),
+            body(admin)[:300],
+        )
+        check("settings shows the category manager", has(admin, "Categories") and has(admin, "Add category"))
+
+        # announcement: switch it on, then confirm visitors see it
+        admin.fill("#announcement_text", "Phase 8 announcement: enrolments are open")
+        admin.check("input[name=announcement_enabled]")
+        admin.click("button:has-text('Save platform settings')")
+        settle(admin, text="Platform settings are live")
+        check("platform settings save", has(admin, "Platform settings are live"), body(admin)[:300])
+
+        # visitors see it on the public site (reused later for the categories check)
+        public_context = browser.new_context(viewport={"width": 1400, "height": 1100})
+        public_page = public_context.new_page()
+        public_page.goto(f"{BASE}/")
+        public_page.wait_for_load_state("networkidle")
+        check("announcement shows on the public site", has(public_page, "Phase 8 announcement"), public_page.url)
+
+        # pause enrolments: the course page stops selling and the server refuses
+        admin.check("input[name=enrolments_paused]")
+        admin.click("button:has-text('Save platform settings')")
+        settle(admin, text="New enrolments are paused")
+        check("enrolments can be paused", has(admin, "New enrolments are paused"), body(admin)[:300])
+
+        # reuse the signed-in learner browser for the paused check
+        learner.goto(f"{BASE}/courses/sql-for-analysts")
+        learner.wait_for_load_state("networkidle")
+        paused_body = body(learner)
+        check(
+            "paused course page replaces the enrol button with a notice",
+            "Enrol for free" not in paused_body and "paused" in paused_body.lower(),
+            paused_body[:300],
+        )
+
+        if enrol_request.get("data"):
+            paused_headers = {
+                "Next-Action": enrol_request["next-action"],
+                "content-type": enrol_request["content-type"],
+            }
+            paused_response = learner_context.request.post(
+                enrol_request["url"],
+                headers=paused_headers,
+                data=enrol_request["data"],
+            )
+            paused_redirect = paused_response.headers.get("x-action-redirect", "")
+            check(
+                "replaying the enrol request while paused is refused",
+                "paused=1" in paused_redirect or "paused=1" in paused_response.text(),
+                f"{paused_response.status} {paused_redirect[:160]}",
+            )
+        else:
+            check("replaying the enrol request while paused is refused", False, "no request captured")
+        learner_context.close()
+
+        # category CRUD
+        admin.fill("input[name=name][placeholder='New category name']", "Testing & QA")
+        admin.click("button:has-text('Add category')")
+        created = False
+        for _ in range(40):
+            if admin.locator("input[aria-label='Testing & QA name']").count() == 1:
+                created = True
+                break
+            admin.wait_for_timeout(250)
+        check("category can be created", created, body(admin)[:300])
+
+        categories_page = public_page
+        categories_page.goto(f"{BASE}/categories")
+        categories_page.wait_for_load_state("networkidle")
+        check(
+            "new category appears on the public categories page",
+            has(categories_page, "Testing & QA"),
+            categories_page.url,
+        )
+        public_context.close()
+
+        admin.locator("input[aria-label='Testing & QA name']").fill("Testing and QA")
+        admin.click("form:has(input[aria-label='Testing & QA name']) button:has-text('Save')")
+        renamed = False
+        for _ in range(40):
+            if admin.locator("input[aria-label='Testing and QA name']").count() == 1:
+                renamed = True
+                break
+            admin.wait_for_timeout(250)
+        check("category can be renamed", renamed, body(admin)[:300])
+
+        admin.click("li:has(input[aria-label='Testing and QA name']) button[aria-label='Delete category']")
+        deleted = False
+        for _ in range(40):
+            if admin.locator("input[aria-label='Testing and QA name']").count() == 0:
+                deleted = True
+                break
+            admin.wait_for_timeout(250)
+        check("category can be deleted", deleted, body(admin)[:200])
+
+        admin.goto(f"{BASE}/admin/audit?q=Testing")
+        admin.wait_for_load_state("networkidle")
+        check("audit records the category changes", has(admin, "Testing"), body(admin)[:300])
+
+        # leave the platform open again for the rest of the suite
+        admin.goto(f"{BASE}/admin/settings")
+        admin.wait_for_load_state("networkidle")
+        admin.uncheck("input[name=announcement_enabled]")
+        admin.uncheck("input[name=enrolments_paused]")
+        admin.click("button:has-text('Save platform settings')")
+        settle(admin, text="Platform settings are live")
+        check("platform controls can be restored", has(admin, "Platform settings are live"), body(admin)[:200])
 
         # ------------------------------------------- auditor: read-only by UI and by server
         # Capture a *real* browser request for a write action as the admin, then replay
@@ -456,6 +568,12 @@ def main() -> int:
             "auditor can open their own account settings",
             has(auditor, "Change password") and has(auditor, "Devices signed in"),
             body(auditor)[:300],
+        )
+        check(
+            "auditor sees platform controls read-only",
+            has(auditor, "Platform controls")
+            and auditor.locator("button:has-text('Save platform settings')").count() == 0,
+            body(auditor)[:200],
         )
 
         if publish_request.get("data"):

@@ -9,6 +9,7 @@ export interface AdminCourseRow {
   status: 'draft' | 'published' | 'archived';
   level: string;
   pricePence: number;
+  featured: number;
   categoryName: string | null;
   instructorName: string;
   updatedAt: string;
@@ -20,7 +21,7 @@ export interface AdminCourseRow {
   thumbnailPath: string | null;
 }
 
-export function adminCourseList(filters: { status?: string; q?: string } = {}): AdminCourseRow[] {
+export function adminCourseList(filters: { status?: string; q?: string; sort?: string } = {}): AdminCourseRow[] {
   const where: string[] = ['1=1'];
   const params: unknown[] = [];
   if (filters.status && ['draft', 'published', 'archived'].includes(filters.status)) {
@@ -33,8 +34,18 @@ export function adminCourseList(filters: { status?: string; q?: string } = {}): 
     params.push(like, like);
   }
 
+  const orderBy =
+    filters.sort === 'title'
+      ? 'LOWER(c.title) ASC'
+      : filters.sort === 'price'
+        ? 'c.price_pence DESC, c.updated_at DESC'
+        : filters.sort === 'enrolments'
+          ? 'enrolledCount DESC, c.updated_at DESC'
+          : 'c.updated_at DESC';
+
   return query<AdminCourseRow>(
     `SELECT c.id, c.slug, c.title, c.status, c.level, c.price_pence AS pricePence,
+            c.featured AS featured,
             c.instructor_name AS instructorName, c.updated_at AS updatedAt,
             c.published_at AS publishedAt, c.thumbnail_path AS thumbnailPath,
             cat.name AS categoryName,
@@ -45,7 +56,7 @@ export function adminCourseList(filters: { status?: string; q?: string } = {}): 
        FROM courses c
        LEFT JOIN categories cat ON cat.id = c.category_id
       WHERE ${where.join(' AND ')}
-      ORDER BY c.updated_at DESC`,
+      ORDER BY ${orderBy}`,
     ...params,
   );
 }
@@ -290,4 +301,20 @@ export interface CategoryOption {
 
 export function categoryOptions(): CategoryOption[] {
   return query<CategoryOption>('SELECT id, name, slug FROM categories ORDER BY sort_order, name');
+}
+
+export interface CategoryRow extends CategoryOption {
+  description: string;
+  sortOrder: number;
+  courseCount: number;
+}
+
+/** Full category rows for the settings page's manager. */
+export function categoryList(): CategoryRow[] {
+  return query<CategoryRow>(
+    `SELECT c.id, c.name, c.slug, c.description, c.sort_order AS sortOrder,
+            (SELECT COUNT(*) FROM courses co WHERE co.category_id = c.id) AS courseCount
+       FROM categories c
+      ORDER BY c.sort_order, c.name`,
+  );
 }

@@ -1,12 +1,17 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { BookOpen, Plus, Search } from 'lucide-react';
+import { ArrowUpDown, BookOpen, Copy, EyeOff, Plus, Rocket, Search, Star } from 'lucide-react';
 import { requireStaff } from '@/lib/auth';
 import { adminCourseList } from '@/lib/queries/admin-courses';
 import { CourseStatusBadge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { formatPenceShort, formatTotalDuration, timeAgo } from '@/lib/format';
 import { fileUrl } from '@/lib/file-url';
+import {
+  duplicateCourseAction,
+  setCourseStatusAction,
+  toggleCourseFeaturedAction,
+} from '@/lib/actions/admin-course-actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,14 +24,38 @@ const STATUS_TABS = [
   { value: 'archived', label: 'Archived' },
 ];
 
+const SORTS = [
+  { value: 'updated', label: 'Updated' },
+  { value: 'title', label: 'Title' },
+  { value: 'price', label: 'Price' },
+  { value: 'enrolments', label: 'Learners' },
+] as const;
+
 export default async function AdminCoursesPage({ searchParams }: PageProps<'/admin/courses'>) {
   const user = await requireStaff('/admin/courses');
   const params = await searchParams;
   const status = typeof params.status === 'string' ? params.status : '';
   const q = typeof params.q === 'string' ? params.q : '';
+  const sort = typeof params.sort === 'string' && SORTS.some((s) => s.value === params.sort) ? params.sort : 'updated';
 
-  const courses = adminCourseList({ status, q });
+  const courses = adminCourseList({ status, q, sort });
   const isWriter = user.role === 'admin';
+
+  // actions return to the exact filtered view they were triggered from
+  const backParams = new URLSearchParams();
+  if (status) backParams.set('status', status);
+  if (q) backParams.set('q', q);
+  if (sort !== 'updated') backParams.set('sort', sort);
+  const back = backParams.toString() ? `/admin/courses?${backParams}` : '/admin/courses';
+
+  const sortHref = (value: string) => {
+    const next = new URLSearchParams();
+    if (status) next.set('status', status);
+    if (q) next.set('q', q);
+    if (value !== 'updated') next.set('sort', value);
+    const query = next.toString();
+    return query ? `/admin/courses?${query}` : '/admin/courses';
+  };
 
   return (
     <div className="space-y-6">
@@ -65,6 +94,7 @@ export default async function AdminCoursesPage({ searchParams }: PageProps<'/adm
             const query = new URLSearchParams();
             if (tab.value) query.set('status', tab.value);
             if (q) query.set('q', q);
+            if (sort !== 'updated') query.set('sort', sort);
             const href = query.toString() ? `/admin/courses?${query}` : '/admin/courses';
             return (
               <Link
@@ -81,6 +111,7 @@ export default async function AdminCoursesPage({ searchParams }: PageProps<'/adm
 
         <form method="get" action="/admin/courses" className="ml-auto flex gap-2">
           {status ? <input type="hidden" name="status" value={status} /> : null}
+          {sort !== 'updated' ? <input type="hidden" name="sort" value={sort} /> : null}
           <label className="sr-only" htmlFor="course-search">
             Search courses
           </label>
@@ -119,9 +150,25 @@ export default async function AdminCoursesPage({ searchParams }: PageProps<'/adm
                   <th>Course</th>
                   <th>Status</th>
                   <th>Content</th>
-                  <th>Price</th>
-                  <th>Learners</th>
-                  <th>Updated</th>
+                  <th>
+                    <Link href={sortHref('price')} className="inline-flex items-center gap-1 hover:text-ink-800">
+                      Price
+                      <ArrowUpDown className={`size-3 ${sort === 'price' ? 'text-brand-600' : 'text-ink-400'}`} aria-hidden />
+                    </Link>
+                  </th>
+                  <th>
+                    <Link href={sortHref('enrolments')} className="inline-flex items-center gap-1 hover:text-ink-800">
+                      Learners
+                      <ArrowUpDown className={`size-3 ${sort === 'enrolments' ? 'text-brand-600' : 'text-ink-400'}`} aria-hidden />
+                    </Link>
+                  </th>
+                  <th>
+                    <Link href={sortHref('updated')} className="inline-flex items-center gap-1 hover:text-ink-800">
+                      Updated
+                      <ArrowUpDown className={`size-3 ${sort === 'updated' ? 'text-brand-600' : 'text-ink-400'}`} aria-hidden />
+                    </Link>
+                  </th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -138,8 +185,11 @@ export default async function AdminCoursesPage({ searchParams }: PageProps<'/adm
                         <span className="min-w-0">
                           <Link
                             href={`/admin/courses/${course.slug}`}
-                            className="block truncate font-medium text-ink-900 hover:text-brand-700"
+                            className="flex items-center gap-1.5 truncate font-medium text-ink-900 hover:text-brand-700"
                           >
+                            {course.featured ? (
+                              <Star className="size-3.5 shrink-0 fill-warning text-warning" aria-label="Featured" />
+                            ) : null}
                             {course.title}
                           </Link>
                           <span className="block truncate text-xs text-ink-500">
@@ -160,6 +210,56 @@ export default async function AdminCoursesPage({ searchParams }: PageProps<'/adm
                     </td>
                     <td>{course.enrolledCount}</td>
                     <td className="text-xs whitespace-nowrap text-ink-500">{timeAgo(course.updatedAt)}</td>
+                    <td className="text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {isWriter ? (
+                          <>
+                            <form action={toggleCourseFeaturedAction}>
+                              <input type="hidden" name="slug" value={course.slug} />
+                              <input type="hidden" name="back" value={back} />
+                              <button
+                                type="submit"
+                                className={`btn-ghost btn-sm px-2 ${course.featured ? 'text-warning' : 'text-ink-400'}`}
+                                title={course.featured ? 'Remove from featured' : 'Feature on the home page'}
+                                aria-label={course.featured ? `Unfeature ${course.title}` : `Feature ${course.title}`}
+                              >
+                                <Star className={`size-4 ${course.featured ? 'fill-warning' : ''}`} aria-hidden />
+                              </button>
+                            </form>
+                            <form action={setCourseStatusAction}>
+                              <input type="hidden" name="slug" value={course.slug} />
+                              <input type="hidden" name="status" value={course.status === 'published' ? 'draft' : 'published'} />
+                              <button
+                                type="submit"
+                                className="btn-ghost btn-sm px-2"
+                                title={course.status === 'published' ? 'Unpublish' : 'Publish'}
+                                aria-label={course.status === 'published' ? `Unpublish ${course.title}` : `Publish ${course.title}`}
+                              >
+                                {course.status === 'published' ? (
+                                  <EyeOff className="size-4" aria-hidden />
+                                ) : (
+                                  <Rocket className="size-4" aria-hidden />
+                                )}
+                              </button>
+                            </form>
+                            <form action={duplicateCourseAction}>
+                              <input type="hidden" name="slug" value={course.slug} />
+                              <button
+                                type="submit"
+                                className="btn-ghost btn-sm px-2"
+                                title="Duplicate as a new draft"
+                                aria-label={`Duplicate ${course.title}`}
+                              >
+                                <Copy className="size-4" aria-hidden />
+                              </button>
+                            </form>
+                          </>
+                        ) : null}
+                        <Link href={`/admin/courses/${course.slug}`} className="link text-sm">
+                          Edit
+                        </Link>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

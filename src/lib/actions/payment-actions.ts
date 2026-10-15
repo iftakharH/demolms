@@ -14,6 +14,7 @@ import { sendMailToUser } from '@/lib/mailer';
 import { refundProcessed } from '@/lib/email-templates';
 import { requireAdminWriter } from '@/lib/auth';
 import { isStaffRole } from '@/lib/types';
+import { platformSettings } from '@/lib/settings';
 import type { FormState } from '@/lib/action-state';
 
 interface CourseRow {
@@ -55,6 +56,11 @@ export async function startCheckoutAction(formData: FormData): Promise<void> {
   // Staff accounts never buy courses - support access is how they act for a learner.
   if (isStaffRole(user.role)) {
     redirect(`/courses/${slug}?staff=1`);
+  }
+
+  // platform pause: no new enrolments while paused
+  if (platformSettings().enrolmentsPaused) {
+    redirect(`/courses/${slug}?paused=1`);
   }
 
   const course = publishedCourse(slug);
