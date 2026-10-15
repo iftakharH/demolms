@@ -7,6 +7,7 @@ import { MobileNav } from './mobile-nav';
 import { UserMenu } from './user-menu';
 import { NotificationBellServer } from '@/components/notifications/notification-bell-server';
 import { getCurrentUser } from '@/lib/auth';
+import { isStaffRole } from '@/lib/types';
 
 const NAV: SiteNavItem[] = [
   { href: '/courses', label: 'All courses' },
@@ -17,6 +18,7 @@ const NAV: SiteNavItem[] = [
 /** Public site header. Server component: reads the session for the account menu. */
 export async function SiteHeader({ wide = false }: { wide?: boolean } = {}) {
   const user = await getCurrentUser();
+  const staff = Boolean(user && isStaffRole(user.role));
 
   return (
     <>
@@ -29,10 +31,16 @@ export async function SiteHeader({ wide = false }: { wide?: boolean } = {}) {
         <div className="flex items-center gap-2">
           {user ? (
             <>
-              <Link href="/dashboard" className="btn-ghost hidden sm:inline-flex">
-                Dashboard
-              </Link>
-              <NotificationBellServer />
+              {staff ? (
+                <Link href="/admin" className="btn-ghost hidden sm:inline-flex">
+                  Admin console
+                </Link>
+              ) : (
+                <Link href="/dashboard" className="btn-ghost hidden sm:inline-flex">
+                  Dashboard
+                </Link>
+              )}
+              {staff ? null : <NotificationBellServer />}
               <UserMenu
                 name={user.name}
                 email={user.email}
@@ -50,7 +58,7 @@ export async function SiteHeader({ wide = false }: { wide?: boolean } = {}) {
               </Link>
             </div>
           )}
-          <MobileNav signedIn={Boolean(user)} />
+          <MobileNav signedIn={Boolean(user)} staff={staff} />
         </div>
       </GlassHeader>
       <SupportBanner />

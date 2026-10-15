@@ -21,11 +21,14 @@ export function ProfileForm({
   email,
   avatarPath,
   prefs,
+  showPrefs = true,
 }: {
   name: string;
   email: string;
   avatarPath: string | null;
   prefs: EmailPrefs;
+  /** learner email prefs are meaningless for staff accounts */
+  showPrefs?: boolean;
 }) {
   const [state, action] = useActionState(updateProfileAction, EMPTY_FORM_STATE);
   const [removeAvatar, setRemoveAvatar] = useState(false);
@@ -104,32 +107,34 @@ export function ProfileForm({
         </div>
       </div>
 
-      <fieldset>
-        <legend className="section-title text-base">Email notifications</legend>
-        <p className="mt-1 text-sm text-ink-500">
-          Every email lands in the outbox either way - these toggles decide what a learner would
-          receive.
-        </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {PREF_LABELS.map((item) => (
-            <label
-              key={item.key}
-              className="flex cursor-pointer items-start gap-3 rounded-xl border border-line p-3.5 transition hover:border-brand-200"
-            >
-              <input
-                type="checkbox"
-                name={`pref_${item.key}`}
-                defaultChecked={prefs[item.key]}
-                className="mt-0.5 size-4 rounded border-line-strong"
-              />
-              <span>
-                <span className="block text-sm font-medium text-ink-800">{item.label}</span>
-                <span className="block text-xs text-ink-500">{item.hint}</span>
-              </span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      {showPrefs ? (
+        <fieldset>
+          <legend className="section-title text-base">Email notifications</legend>
+          <p className="mt-1 text-sm text-ink-500">
+            Every email lands in the outbox either way - these toggles decide what a learner would
+            receive.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {PREF_LABELS.map((item) => (
+              <label
+                key={item.key}
+                className="flex cursor-pointer items-start gap-3 rounded-xl border border-line p-3.5 transition hover:border-brand-200"
+              >
+                <input
+                  type="checkbox"
+                  name={`pref_${item.key}`}
+                  defaultChecked={prefs[item.key]}
+                  className="mt-0.5 size-4 rounded border-line-strong"
+                />
+                <span>
+                  <span className="block text-sm font-medium text-ink-800">{item.label}</span>
+                  <span className="block text-xs text-ink-500">{item.hint}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
 
       <div className="flex justify-end">
         <SubmitButton className="btn-primary" pendingLabel="Saving...">

@@ -259,6 +259,123 @@ def main() -> int:
         check("audit records support.exited", "support.exited" in support_audit)
         check("support audit names the learner", "grace@demo.test" in support_audit, support_audit[:400])
 
+        # ------------------------------- staff accounts cannot learn or buy
+        admin.goto(f"{BASE}/dashboard")
+        admin.wait_for_load_state("networkidle")
+        check("admin is redirected away from the learner dashboard", "/admin" in admin.url, admin.url)
+        check(
+            "redirect explains support access",
+            has(admin, "Staff accounts have no learner area"),
+            body(admin)[:300],
+        )
+
+        admin.goto(f"{BASE}/learn/my-learning")
+        admin.wait_for_load_state("networkidle")
+        check("admin is redirected away from my learning", "/admin" in admin.url, admin.url)
+
+        admin.goto(f"{BASE}/courses/sql-for-analysts")
+        admin.wait_for_load_state("networkidle")
+        course_body = body(admin)
+        check("course page shows the staff panel", "Platform staff view" in course_body, course_body[:300])
+        check(
+            "no enrol or buy button for staff",
+            "Enrol for free" not in course_body and "Buy course" not in course_body,
+        )
+        check(
+            "staff panel links to the builder",
+            admin.locator("a[href='/admin/courses/sql-for-analysts']").count() >= 1,
+        )
+        shot(admin, "p8-07-staff-course")
+
+        admin.goto(f"{BASE}/checkout/ship-your-first-nextjs-app")
+        admin.wait_for_load_state("networkidle")
+        check(
+            "staff cannot open checkout",
+            "/courses/ship-your-first-nextjs-app" in admin.url and "staff=1" in admin.url,
+            admin.url,
+        )
+
+        admin.goto(f"{BASE}/courses")
+        admin.wait_for_load_state("networkidle")
+        check("catalogue cards offer management for staff", has(admin, "Manage in admin"))
+
+        admin.goto(f"{BASE}/admin/settings")
+        admin.wait_for_load_state("networkidle")
+        settings_body = body(admin)
+        check(
+            "admin settings page renders",
+            "Change password" in settings_body and "Two-factor authentication" in settings_body,
+            settings_body[:300],
+        )
+        check("admin settings shows devices", "Devices signed in" in settings_body)
+        shot(admin, "p8-08-settings")
+
+        # replay a learner's real free-enrol request as the admin: refused, nothing created
+        learner_context = browser.new_context(viewport={"width": 1400, "height": 1100})
+        learner = learner_context.new_page()
+        enrol_request: dict[str, str] = {}
+
+        def capture_enrol(request) -> None:
+            headers_lower = {key.lower(): value for key, value in request.headers.items()}
+            if request.method != "POST" or "next-action" not in headers_lower:
+                return
+            if "/courses/" not in request.url:
+                return
+            raw = request.post_data_buffer
+            data = raw.decode("utf-8", errors="replace") if raw else (request.post_data or "")
+            if not data:
+                return
+            enrol_request["url"] = request.url
+            enrol_request["next-action"] = headers_lower["next-action"]
+            enrol_request["content-type"] = headers_lower.get("content-type", "multipart/form-data")
+            enrol_request["data"] = data
+
+        learner.on("request", capture_enrol)
+        login(learner, "learner@demo.test")
+        # the client redirect after a server action can race with networkidle
+        for _ in range(40):
+            if "/login" not in learner.url:
+                break
+            learner.wait_for_timeout(250)
+        check("learner sign-in worked", "/login" not in learner.url, learner.url)
+        learner.goto(f"{BASE}/courses/interview-skills-for-developers")
+        learner.wait_for_load_state("networkidle")
+        if learner.locator("button:has-text('Enrol for free')").count() > 0:
+            learner.click("button:has-text('Enrol for free')")
+            learner.wait_for_load_state("networkidle")
+            learner.wait_for_timeout(500)
+        check("the enrol request was captured", bool(enrol_request.get("data")), str(bool(enrol_request)))
+        learner_context.close()
+
+        if enrol_request.get("data"):
+            enrol_headers = {
+                "Next-Action": enrol_request["next-action"],
+                "content-type": enrol_request["content-type"],
+            }
+            enrol_response = admin_context.request.post(
+                enrol_request["url"],
+                headers=enrol_headers,
+                data=enrol_request["data"],
+            )
+            # server actions deliver redirects via x-action-redirect (RSC), not a 303
+            redirect_header = enrol_response.headers.get("x-action-redirect", "")
+            check(
+                "replaying the enrol request as admin is refused",
+                "staff=1" in redirect_header or "staff=1" in enrol_response.text(),
+                f"{enrol_response.status} {redirect_header[:160]}",
+            )
+        else:
+            check("replaying the enrol request as admin is refused", False, "no request captured")
+
+        # and the admin account itself owns nothing
+        admin.goto(f"{BASE}/admin/users?q=Imogen")
+        admin.wait_for_load_state("networkidle")
+        admin.click("a:has-text('Open')")
+        admin.wait_for_url("**/admin/users/**", timeout=20000)
+        admin.wait_for_load_state("networkidle")
+        check("admin account has no enrolments", has(admin, "Not enrolled in anything yet"), body(admin)[:300])
+        check("admin account has no orders", has(admin, "No orders"), body(admin)[:300])
+
         # ------------------------------------------- auditor: read-only by UI and by server
         # Capture a *real* browser request for a write action as the admin, then replay
         # the exact same request as the auditor. Same URL, same Next-Action header,
@@ -328,6 +445,18 @@ def main() -> int:
         check("auditor sees the read-only explanation on user controls", has(auditor, "read-only"), body(auditor)[:300])
         check("auditor sees no support access button", "Enter as learner" not in body(auditor))
         shot(auditor, "p8-05-auditor")
+
+        auditor.goto(f"{BASE}/dashboard")
+        auditor.wait_for_load_state("networkidle")
+        check("auditor is redirected away from the learner dashboard", "/admin" in auditor.url, auditor.url)
+
+        auditor.goto(f"{BASE}/admin/settings")
+        auditor.wait_for_load_state("networkidle")
+        check(
+            "auditor can open their own account settings",
+            has(auditor, "Change password") and has(auditor, "Devices signed in"),
+            body(auditor)[:300],
+        )
 
         if publish_request.get("data"):
             replay_headers = {

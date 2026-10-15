@@ -5,6 +5,7 @@ import { CourseCard } from '@/components/course/course-card';
 import { queryOne } from '@/lib/db';
 import { formatPenceShort, formatTotalDuration, timeAgo } from '@/lib/format';
 import { getCurrentUser } from '@/lib/auth';
+import { isStaffRole } from '@/lib/types';
 import { enrolledCourseProgress, type EnrolledCourseProgress } from '@/lib/progress';
 import { enrolledCourses } from '@/lib/queries/learner';
 import { ProgressBar } from '@/components/ui/progress';
@@ -13,6 +14,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   const viewer = await getCurrentUser();
+  const staffView = Boolean(viewer && isStaffRole(viewer.role));
   const featured = featuredCourses(3);
   const newest = newestCourses(3);
   const categories = categoriesWithCounts();
@@ -143,7 +145,13 @@ export default async function HomePage() {
             </div>
             <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {featured.map((course, index) => (
-                <CourseCard key={course.id} course={course} priority={index === 0} enrolment={progress.get(course.id)} />
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  priority={index === 0}
+                  enrolment={progress.get(course.id)}
+                  staffView={staffView}
+                />
               ))}
             </div>
           </section>
@@ -194,7 +202,7 @@ export default async function HomePage() {
             </div>
             <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {free.map((course) => (
-                <CourseCard key={course.id} course={course} enrolment={progress.get(course.id)} />
+                <CourseCard key={course.id} course={course} enrolment={progress.get(course.id)} staffView={staffView} />
               ))}
             </div>
           </section>
@@ -236,7 +244,7 @@ export default async function HomePage() {
             </div>
             <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {newest.map((course) => (
-                <CourseCard key={course.id} course={course} enrolment={progress.get(course.id)} />
+                <CourseCard key={course.id} course={course} enrolment={progress.get(course.id)} staffView={staffView} />
               ))}
             </div>
           </section>

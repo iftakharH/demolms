@@ -14,7 +14,8 @@ export type AdminIconKey =
   | 'orders'
   | 'coupons'
   | 'certificates'
-  | 'audit';
+  | 'audit'
+  | 'settings';
 
 export interface AdminNavEntry {
   href: string;
@@ -35,6 +36,7 @@ export const ADMIN_NAV: AdminNavEntry[] = [
   { href: '/admin/coupons', label: 'Coupons', icon: 'coupons' },
   { href: '/admin/certificates', label: 'Certificates', icon: 'certificates' },
   { href: '/admin/audit', label: 'Audit log', icon: 'audit' },
+  { href: '/admin/settings', label: 'Settings', icon: 'settings' },
 ];
 
 /** Sections that exist at this point in the build (grows as phases land). */
@@ -46,6 +48,7 @@ const IMPLEMENTED = new Set<string>([
   '/admin/users',
   '/admin/coupons',
   '/admin/audit',
+  '/admin/settings',
 ]);
 
 export function availableAdminNav(extra: string[] = []): AdminNavEntry[] {

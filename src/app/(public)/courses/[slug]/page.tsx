@@ -11,6 +11,7 @@ import {
   Heart,
   PlayCircle,
   RefreshCw,
+  SquarePen,
   Users,
 } from 'lucide-react';
 import { courseBySlug, relatedCourses } from '@/lib/queries/catalog';
@@ -65,6 +66,7 @@ export default async function CoursePage({
 
   const viewer = await getCurrentUser();
   const staffPreview = query.preview === '1' && Boolean(viewer && isStaffRole(viewer.role));
+  const staffViewer = Boolean(viewer && isStaffRole(viewer.role));
 
   const course = courseBySlug(slug, { includeUnpublished: staffPreview });
   if (!course) notFound();
@@ -135,6 +137,17 @@ export default async function CoursePage({
         <div className="mt-5 flex items-center gap-2.5 rounded-2xl border border-emerald-200 bg-success-soft px-4 py-3 text-sm text-emerald-900">
           <BadgeCheck className="size-5 shrink-0 text-emerald-600" aria-hidden />
           You are enrolled. Open the course from <strong>My learning</strong> to start lesson one.
+        </div>
+      ) : null}
+
+      {query.staff === '1' && staffViewer ? (
+        <div className="mt-5 flex items-center gap-2.5 rounded-2xl border border-amber-200 bg-warning-soft px-4 py-3 text-sm text-amber-900">
+          <BadgeCheck className="size-5 shrink-0 text-amber-600" aria-hidden />
+          Staff accounts cannot enrol in courses. Enter a learner&apos;s account from{' '}
+          <Link href="/admin/users" className="font-semibold underline">
+            Users
+          </Link>{' '}
+          to act on their behalf.
         </div>
       ) : null}
 
@@ -338,6 +351,24 @@ export default async function CoursePage({
                       ) : null}
                     </ul>
                   </div>
+                ) : staffViewer ? (
+                  /* --------------------------------------------------- staff panel */
+                  <div>
+                    <span className="badge bg-info-soft text-info">Platform staff view</span>
+                    <p className="mt-3 text-sm text-ink-600">
+                      Enrolment and learning are disabled for staff accounts. Enter a learner&apos;s
+                      account to see this course exactly as they do.
+                    </p>
+                    <div className="mt-5 space-y-2">
+                      <Link href={`/admin/courses/${course.slug}`} className="btn-primary btn-lg w-full">
+                        <SquarePen className="size-4" aria-hidden />
+                        Edit this course
+                      </Link>
+                      <Link href="/admin/users" className="btn-secondary w-full justify-center">
+                        Enter as learner
+                      </Link>
+                    </div>
+                  </div>
                 ) : (
                   /* -------------------------------------------------- sales panel */
                   <>
@@ -431,6 +462,16 @@ export default async function CoursePage({
                 {summary.percent > 0 ? 'Continue' : 'Start'}
               </Link>
             </>
+          ) : staffViewer ? (
+            <>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-ink-900">Platform staff</p>
+                <p className="text-[0.6875rem] text-ink-500">Enrolment disabled for staff accounts</p>
+              </div>
+              <Link href={`/admin/courses/${course.slug}`} className="btn-primary shrink-0">
+                Edit course
+              </Link>
+            </>
           ) : (
             <>
               <div>
@@ -463,7 +504,12 @@ export default async function CoursePage({
           <h2 className="section-title">Students also viewed</h2>
           <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {related.map((item) => (
-              <CourseCard key={item.id} course={item} enrolment={relatedProgress.get(item.id)} />
+              <CourseCard
+                key={item.id}
+                course={item}
+                enrolment={relatedProgress.get(item.id)}
+                staffView={staffViewer}
+              />
             ))}
           </div>
         </section>

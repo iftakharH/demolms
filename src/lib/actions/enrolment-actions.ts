@@ -5,6 +5,7 @@ import { AUDIT_ACTIONS, logAudit } from '@/lib/audit';
 import { getCurrentUser } from '@/lib/auth';
 import { notify } from '@/lib/notify';
 import { queryOne, run } from '@/lib/db';
+import { isStaffRole } from '@/lib/types';
 
 /**
  * Free one-click enrolment.
@@ -15,6 +16,11 @@ export async function enrolFreeAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   if (!user) {
     redirect(`/login?next=${encodeURIComponent(`/courses/${slug}`)}`);
+  }
+
+  // Staff accounts never enrol - support access is how they act for a learner.
+  if (isStaffRole(user.role)) {
+    redirect(`/courses/${slug}?staff=1`);
   }
 
   const course = queryOne<{ id: number; title: string; price_pence: number; slug: string }>(

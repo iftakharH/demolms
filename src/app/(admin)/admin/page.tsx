@@ -37,8 +37,9 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = { title: 'Admin dashboard' };
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({ searchParams }: PageProps<'/admin'>) {
   const user = await requireStaff('/admin');
+  const query = await searchParams;
   const kpis = adminKpis();
   const series = revenueSeries(30);
   const orders = adminOrders({ limit: 7 });
@@ -66,6 +67,16 @@ export default async function AdminDashboardPage() {
         </div>
         <Badge tone="brand">Last 30 days</Badge>
       </div>
+
+      {query.staff === '1' ? (
+        <p className="rounded-xl border border-amber-200 bg-warning-soft px-4 py-3 text-sm text-amber-900">
+          Staff accounts have no learner area. To see the platform as a learner, open someone from{' '}
+          <Link href="/admin/users" className="font-semibold underline">
+            Users
+          </Link>{' '}
+          and choose <strong>Enter as learner</strong>.
+        </p>
+      ) : null}
 
       {/* ------------------------------------------------------------- KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8">

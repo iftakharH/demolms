@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Check, Clock, PlayCircle, Star, Users } from 'lucide-react';
+import { Check, Clock, PlayCircle, SquarePen, Star, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { fileUrl } from '@/lib/file-url';
 import { formatPenceShort, formatTotalDuration } from '@/lib/format';
@@ -26,10 +26,13 @@ export function CourseCard({
   course,
   priority = false,
   enrolment,
+  staffView = false,
 }: {
   course: CourseCardData;
   priority?: boolean;
   enrolment?: EnrolledCourseProgress;
+  /** staff browse the catalogue for management, not purchase */
+  staffView?: boolean;
 }) {
   const owned = Boolean(enrolment);
 
@@ -134,6 +137,14 @@ export function CourseCard({
                 {enrolment.completed ? 'Revisit course' : enrolment.percent > 0 ? 'Continue learning' : 'Start learning'}
               </Link>
             </>
+          ) : staffView ? (
+            <Link
+              href={`/admin/courses/${course.slug}`}
+              className="btn-secondary btn-sm w-full justify-center"
+            >
+              <SquarePen className="size-3.5" aria-hidden />
+              Manage in admin
+            </Link>
           ) : (
             <div className="flex items-center justify-between">
               <span className="text-base font-semibold text-ink-900">

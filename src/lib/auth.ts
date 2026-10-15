@@ -373,6 +373,17 @@ export async function requireAdminWriter(): Promise<SessionUser> {
   return user;
 }
 
+/**
+ * Learner-area guard. Staff accounts have no learner surfaces - they manage the
+ * platform and use "Enter as learner" (support access) when a learner needs help.
+ * During support access the acting user IS the learner, so this guard passes.
+ */
+export async function requireLearner(nextPath?: string): Promise<SessionUser> {
+  const user = await requireUser(nextPath);
+  if (isStaffRole(user.role)) redirect('/admin?staff=1');
+  return user;
+}
+
 export async function requireVerified(): Promise<SessionUser> {
   const user = await requireUser();
   if (!user.emailVerified) redirect('/verify-email/notice');

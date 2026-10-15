@@ -308,10 +308,23 @@ def main() -> int:
             preview.url,
         )
         preview_body = preview.inner_text("body")
-        check("new course appears with its price", "£39.50" in preview_body, preview_body[:300])
+        check(
+            "staff preview shows the staff panel",
+            "Platform staff view" in preview_body and "£39.50" not in preview_body,
+            preview_body[:300],
+        )
         check("new course shows the uploaded thumbnail", preview.locator("img[src*='/uploads/']").count() > 0)
         preview.screenshot(path=os.path.join(SHOTS, "p3-05-learner-preview.png"))
         preview.close()
+
+        # visitors see the price; staff never do (enrolment is learner-only)
+        visitor_context = browser.new_context(viewport={"width": 1400, "height": 1000})
+        visitor = visitor_context.new_page()
+        visitor.goto(f"{BASE}/courses/build-a-cli-tool-with-node-js")
+        visitor.wait_for_load_state("networkidle")
+        visitor_body = visitor.inner_text("body")
+        check("public page shows the price to visitors", "£39.50" in visitor_body, visitor_body[:300])
+        visitor_context.close()
         assert len(results) > checks_before
 
         # draft staff preview banner (also opens in a new tab)

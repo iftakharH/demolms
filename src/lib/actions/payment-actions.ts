@@ -13,6 +13,7 @@ import { notify } from '@/lib/notify';
 import { sendMailToUser } from '@/lib/mailer';
 import { refundProcessed } from '@/lib/email-templates';
 import { requireAdminWriter } from '@/lib/auth';
+import { isStaffRole } from '@/lib/types';
 import type { FormState } from '@/lib/action-state';
 
 interface CourseRow {
@@ -49,6 +50,11 @@ export async function startCheckoutAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   if (!user) {
     redirect(`/login?next=${encodeURIComponent(`/checkout/${slug}`)}`);
+  }
+
+  // Staff accounts never buy courses - support access is how they act for a learner.
+  if (isStaffRole(user.role)) {
+    redirect(`/courses/${slug}?staff=1`);
   }
 
   const course = publishedCourse(slug);

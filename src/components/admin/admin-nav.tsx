@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Receipt,
   ScrollText,
+  Settings,
   UsersRound,
   type LucideIcon,
 } from 'lucide-react';
@@ -24,6 +25,7 @@ const ICONS: Record<AdminIconKey, LucideIcon> = {
   coupons: BadgePercent,
   certificates: GraduationCap,
   audit: ScrollText,
+  settings: Settings,
 };
 
 /** Sidebar on desktop, scrollable row on mobile. Entries arrive from the server. */

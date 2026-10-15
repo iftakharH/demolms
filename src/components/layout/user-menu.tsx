@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LogOut,
   Receipt,
+  Settings,
   ShieldCheck,
   UserRound,
 } from 'lucide-react';
@@ -78,22 +79,30 @@ export function UserMenu({
 
           <div className="p-1.5">
             {staff ? (
-              <MenuLink href="/admin" icon={<ShieldCheck className="size-4" />} onClick={() => setOpen(false)}>
-                Admin console
-              </MenuLink>
-            ) : null}
-            <MenuLink href="/dashboard" icon={<LayoutDashboard className="size-4" />} onClick={() => setOpen(false)}>
-              Dashboard
-            </MenuLink>
-            <MenuLink href="/learn/my-learning" icon={<BookOpen className="size-4" />} onClick={() => setOpen(false)}>
-              My learning
-            </MenuLink>
-            <MenuLink href="/learn/orders" icon={<Receipt className="size-4" />} onClick={() => setOpen(false)}>
-              Orders
-            </MenuLink>
-            <MenuLink href="/learn/profile" icon={<UserRound className="size-4" />} onClick={() => setOpen(false)}>
-              Profile
-            </MenuLink>
+              <>
+                <MenuLink href="/admin" icon={<ShieldCheck className="size-4" />} onClick={() => setOpen(false)}>
+                  Admin console
+                </MenuLink>
+                <MenuLink href="/admin/settings" icon={<Settings className="size-4" />} onClick={() => setOpen(false)}>
+                  Account settings
+                </MenuLink>
+              </>
+            ) : (
+              <>
+                <MenuLink href="/dashboard" icon={<LayoutDashboard className="size-4" />} onClick={() => setOpen(false)}>
+                  Dashboard
+                </MenuLink>
+                <MenuLink href="/learn/my-learning" icon={<BookOpen className="size-4" />} onClick={() => setOpen(false)}>
+                  My learning
+                </MenuLink>
+                <MenuLink href="/learn/orders" icon={<Receipt className="size-4" />} onClick={() => setOpen(false)}>
+                  Orders
+                </MenuLink>
+                <MenuLink href="/learn/profile" icon={<UserRound className="size-4" />} onClick={() => setOpen(false)}>
+                  Profile
+                </MenuLink>
+              </>
+            )}
           </div>
 
           <div className="border-t border-line p-1.5">

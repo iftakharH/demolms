@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { SearchX, Sparkles } from 'lucide-react';
 import { catalog, categoriesWithCounts, popularTags, type CatalogFilters as Filters } from '@/lib/queries/catalog';
 import { getCurrentUser } from '@/lib/auth';
+import { isStaffRole } from '@/lib/types';
 import { enrolledCourseProgress, type EnrolledCourseProgress } from '@/lib/progress';
 import { CourseCard } from '@/components/course/course-card';
 import { CatalogFilters, CatalogSort, type FilterOption } from '@/components/catalog/filters';
@@ -62,6 +63,7 @@ function first(value: string | string[] | undefined): string {
 export default async function CoursesPage({ searchParams }: PageProps<'/courses'>) {
   const params = await searchParams;
   const viewer = await getCurrentUser();
+  const staffView = Boolean(viewer && isStaffRole(viewer.role));
 
   const active = {
     q: first(params.q),
@@ -215,6 +217,7 @@ export default async function CoursesPage({ searchParams }: PageProps<'/courses'
                     course={course}
                     priority={index < 3}
                     enrolment={progress.get(course.id)}
+                    staffView={staffView}
                   />
                 ))}
               </div>

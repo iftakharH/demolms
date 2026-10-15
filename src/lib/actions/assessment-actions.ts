@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { requireUser, requireAdminWriter } from '@/lib/auth';
+import { requireLearner, requireAdminWriter } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import { query, queryOne, run } from '@/lib/db';
 import { activeEnrolment, maybeCompleteCourse } from '@/lib/progress';
@@ -26,7 +26,7 @@ import type { FormState } from '@/lib/action-state';
 /* ------------------------------------------------------------------ learner: quiz */
 
 export async function submitQuizAction(_prev: FormState, formData: FormData): Promise<FormState> {
-  const user = await requireUser();
+  const user = await requireLearner();
   const lessonId = Number.parseInt(String(formData.get('lesson_id') ?? ''), 10);
   const lesson = quizLesson(lessonId);
   if (!lesson) return { error: 'That quiz is no longer available.' };
@@ -146,7 +146,7 @@ export async function submitQuizAction(_prev: FormState, formData: FormData): Pr
 /* ------------------------------------------------------------------ learner: assignment */
 
 export async function submitAssignmentAction(_prev: FormState, formData: FormData): Promise<FormState> {
-  const user = await requireUser();
+  const user = await requireLearner();
   const lessonId = Number.parseInt(String(formData.get('lesson_id') ?? ''), 10);
   const assignment = assignmentLesson(lessonId);
   if (!assignment) return { error: 'That assignment is no longer available.' };

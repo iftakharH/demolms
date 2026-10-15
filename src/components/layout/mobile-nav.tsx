@@ -16,7 +16,7 @@ const LINKS = [
  * the bar, its links arriving in a short stagger. Closes on Escape, on a link,
  * on navigation, or on a tap anywhere else.
  */
-export function MobileNav({ signedIn }: { signedIn: boolean }) {
+export function MobileNav({ signedIn, staff = false }: { signedIn: boolean; staff?: boolean }) {
   // Tying the open state to the route closes the panel on any navigation without
   // an effect: a different pathname simply means "not open any more".
   const [openedPath, setOpenedPath] = useState<string | null>(null);
@@ -83,12 +83,12 @@ export function MobileNav({ signedIn }: { signedIn: boolean }) {
 
             {signedIn ? (
               <Link
-                href="/dashboard"
+                href={staff ? '/admin' : '/dashboard'}
                 onClick={close}
                 style={{ animationDelay: `${40 + LINKS.length * 45}ms` }}
                 className="animate-pop mt-1 flex items-center justify-between gap-2 rounded-xl bg-brand-50/80 px-3 py-2.5 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-100"
               >
-                Go to dashboard
+                {staff ? 'Admin console' : 'Go to dashboard'}
                 <ArrowRight className="size-4" aria-hidden />
               </Link>
             ) : (

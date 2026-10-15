@@ -9,6 +9,7 @@ import { fileUrl } from '@/lib/file-url';
 import { formatPence } from '@/lib/format';
 import { startCheckoutAction } from '@/lib/actions/payment-actions';
 import { SubmitButton } from '@/components/ui/submit-button';
+import { isStaffRole } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +34,8 @@ export default async function CheckoutPage({ params, searchParams }: PageProps<'
 
   const user = await getCurrentUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(`/checkout/${slug}`)}`);
+  // Staff accounts never buy courses - support access is how they act for a learner.
+  if (isStaffRole(user.role)) redirect(`/courses/${slug}?staff=1`);
 
   const course = queryOne<CheckoutCourse>(
     `SELECT id, slug, title, subtitle, instructor_name, price_pence, thumbnail_path

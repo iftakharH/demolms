@@ -5,13 +5,13 @@ import { SiteHeader } from '@/components/layout/site-header';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { LearnerNav } from '@/components/learner/learner-nav';
 import { LearnerTabBar } from '@/components/learner/learner-tab-bar';
-import { requireUser } from '@/lib/auth';
+import { requireLearner } from '@/lib/auth';
 import { unreadCount } from '@/lib/notify';
 
 export const dynamic = 'force-dynamic';
 
 export default async function LearnerLayout({ children }: { children: ReactNode }) {
-  const user = await requireUser();
+  const user = await requireLearner();
   const unread = unreadCount(user.id);
 
   return (
