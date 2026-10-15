@@ -118,6 +118,9 @@ export default async function ProfilePage({ searchParams }: PageProps<'/learn/pr
                 <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-ink-800">
                   {deviceLabel(session.userAgent)}
                   {session.isCurrent ? <Badge tone="success">this device</Badge> : null}
+                  {session.supportByEmail ? (
+                    <Badge tone="warning">support access · {session.supportByEmail}</Badge>
+                  ) : null}
                 </p>
                 <p className="text-xs text-ink-500">
                   Started {timeAgo(session.createdAt)} · expires {formatDateTime(session.expiresAt)}

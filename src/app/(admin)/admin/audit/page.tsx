@@ -19,6 +19,7 @@ const ACTION_GROUPS: { label: string; prefix?: string }[] = [
   { label: 'Courses', prefix: 'course.' },
   { label: 'Orders & payments', prefix: 'order.' },
   { label: 'Users & auth', prefix: 'user.' },
+  { label: 'Support access', prefix: 'support.' },
   { label: 'Grading', prefix: 'submission.' },
   { label: 'Quizzes', prefix: 'quiz.' },
   { label: 'Certificates', prefix: 'certificate.' },

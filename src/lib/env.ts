@@ -23,6 +23,12 @@ export const DEV_TOOLS = process.env.DEMO_HIDE_DEV_TOOLS !== 'true';
 
 export const SESSION_COOKIE = 'demolms_session';
 
+/**
+ * Support access ("enter as learner"): a signed session token for the learner,
+ * stored separately so the admin's own session cookie is never touched.
+ */
+export const IMPERSONATION_COOKIE = 'demolms_support';
+
 /** Session lifetime (days). */
 export const SESSION_DAYS = 14;
 /** Length of the "half authenticated" window while an admin enters their TOTP code. */

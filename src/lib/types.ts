@@ -50,6 +50,7 @@ export interface SessionRow {
   token_hash: string;
   user_id: number;
   needs_mfa: number;
+  impersonated_by: number | null;
   ip: string | null;
   user_agent: string | null;
   created_at: string;

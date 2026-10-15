@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   token_hash TEXT    PRIMARY KEY,               -- sha256 hex of the raw cookie token
   user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   needs_mfa  INTEGER NOT NULL DEFAULT 0,        -- 1 while waiting for the TOTP step
+  impersonated_by INTEGER REFERENCES users(id) ON DELETE SET NULL, -- support access: the admin behind it
   ip         TEXT,
   user_agent TEXT,
   created_at TEXT    NOT NULL DEFAULT (datetime('now')),

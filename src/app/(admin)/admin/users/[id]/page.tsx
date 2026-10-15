@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, ScrollText } from 'lucide-react';
+import { ArrowLeft, LifeBuoy, LogIn, ScrollText } from 'lucide-react';
 import { requireStaff } from '@/lib/auth';
 import { adminUserDetail, userEnrolments, userOrders, userRecentAudit } from '@/lib/queries/admin-users';
 import { UserAdminControls } from '@/components/admin/user-admin-controls';
+import { enterLearnerAccountAction } from '@/lib/actions/support-actions';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ProgressBar } from '@/components/ui/progress';
@@ -15,9 +16,13 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = { title: 'User · Admin' };
 
-export default async function AdminUserDetailPage({ params }: PageProps<'/admin/users/[id]'>) {
+export default async function AdminUserDetailPage({
+  params,
+  searchParams,
+}: PageProps<'/admin/users/[id]'>) {
   const admin = await requireStaff('/admin/users');
   const { id } = await params;
+  const query = await searchParams;
   const userId = Number.parseInt(id, 10);
   if (!Number.isFinite(userId)) notFound();
 
@@ -42,6 +47,17 @@ export default async function AdminUserDetailPage({ params }: PageProps<'/admin/
         <ArrowLeft className="size-4" aria-hidden />
         All users
       </Link>
+
+      {query.returned === '1' ? (
+        <p className="rounded-xl border border-emerald-200 bg-success-soft px-4 py-3 text-sm text-emerald-800">
+          Support session ended - you are back in the admin console.
+        </p>
+      ) : null}
+      {typeof query.error === 'string' ? (
+        <p className="rounded-xl border border-rose-200 bg-danger-soft px-4 py-3 text-sm text-danger">
+          {query.error}
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-4">
@@ -166,6 +182,26 @@ export default async function AdminUserDetailPage({ params }: PageProps<'/admin/
         </div>
 
         <aside className="space-y-4">
+          {user.role === 'learner' && user.isActive && admin.role === 'admin' ? (
+            <section className="card border-brand-200 p-5">
+              <h2 className="section-title flex items-center gap-2">
+                <LifeBuoy className="size-4 text-brand-600" aria-hidden />
+                Support access
+              </h2>
+              <p className="mt-1.5 text-sm text-ink-500">
+                Land directly in {user.name}&apos;s account to help them - no password needed. You
+                stay signed in as admin, and the session is audited.
+              </p>
+              <form action={enterLearnerAccountAction} className="mt-4">
+                <input type="hidden" name="user_id" value={user.id} />
+                <button type="submit" className="btn-primary">
+                  <LogIn className="size-4" aria-hidden />
+                  Enter as learner
+                </button>
+              </form>
+            </section>
+          ) : null}
+
           <section className="card p-5">
             <h2 className="section-title">Account controls</h2>
             <div className="mt-4">

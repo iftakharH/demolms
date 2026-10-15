@@ -202,6 +202,63 @@ def main() -> int:
         admin.wait_for_load_state("networkidle")
         check("audit log records the disable reason", has(admin, "Phase 8 verification"), body(admin)[:400])
 
+        # ------------------------------------- support access: enter as learner
+        # Capture the real "Enter as learner" request for the auditor replay below.
+        # (No positive replay here on purpose: replaying as the admin would flip the
+        # admin browser into support mode mid-test.)
+        support_request: dict[str, str] = {}
+
+        def capture_support(request) -> None:
+            headers_lower = {key.lower(): value for key, value in request.headers.items()}
+            if request.method != "POST" or "next-action" not in headers_lower:
+                return
+            if "/admin/users/" not in request.url:
+                return
+            raw = request.post_data_buffer
+            data = raw.decode("utf-8", errors="replace") if raw else (request.post_data or "")
+            if not data:
+                return
+            support_request["url"] = request.url
+            support_request["next-action"] = headers_lower["next-action"]
+            support_request["content-type"] = headers_lower.get("content-type", "multipart/form-data")
+            support_request["data"] = data
+
+        admin.on("request", capture_support)
+
+        support_user_url = f"{BASE}/admin/users/{user_url.rsplit('/', 1)[-1]}"
+        admin.goto(support_user_url)
+        admin.wait_for_load_state("networkidle")
+        check("admin sees the support access button", has(admin, "Enter as learner"), body(admin)[:300])
+        admin.click("button:has-text('Enter as learner')")
+        settle(admin, url="**/dashboard*", timeout=25000)
+        check(
+            "entering lands on the learner dashboard",
+            "/dashboard" in admin.url and has(admin, "Return to admin"),
+            admin.url,
+        )
+        check("support banner names the learner", has(admin, "Support access"), body(admin)[:300])
+        shot(admin, "p8-06-support-mode")
+
+        admin.goto(f"{BASE}/admin")
+        admin.wait_for_load_state("networkidle")
+        check("admin console is locked while in support mode", "/dashboard" in admin.url, admin.url)
+
+        admin.goto(f"{BASE}/learn/my-learning")
+        admin.wait_for_load_state("networkidle")
+        check("learner pages work while in support mode", has(admin, "My learning"), body(admin)[:200])
+
+        admin.click("button:has-text('Return to admin')")
+        settle(admin, text="Support session ended", timeout=25000)
+        check("returning to admin works", has(admin, "Support session ended"), body(admin)[:300])
+        check("still signed in as admin after returning", has(admin, "Account controls"), body(admin)[:200])
+
+        admin.goto(f"{BASE}/admin/audit?group=Support%20access")
+        admin.wait_for_load_state("networkidle")
+        support_audit = body(admin)
+        check("audit records support.entered", "support.entered" in support_audit)
+        check("audit records support.exited", "support.exited" in support_audit)
+        check("support audit names the learner", "grace@demo.test" in support_audit, support_audit[:400])
+
         # ------------------------------------------- auditor: read-only by UI and by server
         # Capture a *real* browser request for a write action as the admin, then replay
         # the exact same request as the auditor. Same URL, same Next-Action header,
@@ -269,6 +326,7 @@ def main() -> int:
         auditor.goto(f"{BASE}/admin/users/{user_url.rsplit('/', 1)[-1]}")
         auditor.wait_for_load_state("networkidle")
         check("auditor sees the read-only explanation on user controls", has(auditor, "read-only"), body(auditor)[:300])
+        check("auditor sees no support access button", "Enter as learner" not in body(auditor))
         shot(auditor, "p8-05-auditor")
 
         if publish_request.get("data"):
@@ -322,6 +380,37 @@ def main() -> int:
             check("course is still unpublished after the auditor attempt", False, "no request captured")
             check("the same request succeeds for an admin", False, "no request captured")
             check("replayed publish restored the course for the admin", False, "no request captured")
+
+        # auditor replay of the enter-as-learner request: rejected, and no support cookie
+        if support_request.get("data"):
+            support_headers = {
+                "Next-Action": support_request["next-action"],
+                "content-type": support_request["content-type"],
+            }
+            support_response = auditor_context.request.post(
+                support_request["url"],
+                headers=support_headers,
+                data=support_request["data"],
+            )
+            rejected = (
+                support_response.status >= 400
+                or "FORBIDDEN" in support_response.text()
+                or "read-only" in support_response.text().lower()
+            )
+            check(
+                "auditor replaying the enter-as-learner request is rejected",
+                rejected,
+                f"{support_response.status}: {support_response.text()[:160]}",
+            )
+            set_cookie = support_response.headers.get("set-cookie", "")
+            check(
+                "rejected support request sets no support cookie",
+                "demolms_support" not in set_cookie,
+                set_cookie[:160],
+            )
+        else:
+            check("auditor replaying the enter-as-learner request is rejected", False, "no request captured")
+            check("rejected support request sets no support cookie", False, "no request captured")
 
         auditor_context.close()
         admin_context.close()

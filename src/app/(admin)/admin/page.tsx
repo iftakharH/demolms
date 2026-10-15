@@ -7,6 +7,7 @@ import {
   ClipboardCheck,
   CreditCard,
   GraduationCap,
+  LogIn,
   Mail,
   Plus,
   Receipt,
@@ -26,6 +27,7 @@ import {
 } from '@/lib/queries/admin';
 import { adminOrders } from '@/lib/queries/admin-orders';
 import { gradingQueue } from '@/lib/queries/assessment';
+import { enterLearnerAccountAction } from '@/lib/actions/support-actions';
 import { formatPence, timeAgo } from '@/lib/format';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge, CourseStatusBadge, OrderStatusBadge } from '@/components/ui/badge';
@@ -293,6 +295,19 @@ export default async function AdminDashboardPage() {
                       {learner.lastLoginAt ? `seen ${timeAgo(learner.lastLoginAt)}` : 'never signed in'}
                     </span>
                   </span>
+                  {user.role === 'admin' ? (
+                    <form action={enterLearnerAccountAction} className="shrink-0">
+                      <input type="hidden" name="user_id" value={learner.id} />
+                      <button
+                        type="submit"
+                        className="btn-ghost btn-sm"
+                        title={`Enter ${learner.name}'s account (support access)`}
+                      >
+                        <LogIn className="size-3.5" aria-hidden />
+                        Enter
+                      </button>
+                    </form>
+                  ) : null}
                   <Link href={`/admin/users/${learner.id}`} className="link shrink-0 text-sm">
                     Open
                   </Link>

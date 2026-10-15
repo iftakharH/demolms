@@ -4,7 +4,8 @@ import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
 import { query, queryOne, run } from './db';
 import { hmacHex, safeEqual, sha256, token } from './ids';
-import { SESSION_COOKIE, SESSION_DAYS, SESSION_SECRET } from './env';import { isStaffRole, toSessionUser, type DbUser, type Role, type SessionRow, type SessionUser } from './types';
+import { IMPERSONATION_COOKIE, SESSION_COOKIE, SESSION_DAYS, SESSION_SECRET } from './env';
+import { isStaffRole, toSessionUser, type DbUser, type Role, type SessionRow, type SessionUser } from './types';
 
 /* ------------------------------------------------------------------ passwords */
 
@@ -81,42 +82,80 @@ export async function createSession(
 export interface CurrentSession {
   user: SessionUser;
   session: SessionRow;
+  /** Set when this request runs inside support access (an admin acting as a learner). */
+  support?: {
+    adminId: number | null;
+    adminEmail: string | null;
+  };
 }
 
-/**
- * Reads and validates the session cookie against the sessions table.
- * Memoised per request so a page can call it freely.
- */
-export const getSession = cache(async (): Promise<CurrentSession | null> => {
-  const cookieStore = await cookies();
-  const signed = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!signed) return null;
+type SessionJoinRow = SessionRow & DbUser;
 
-  const raw = unsign(signed);
-  if (!raw) return null;
-
-  const row = queryOne<SessionRow & DbUser & { session_id: number }>(
-    `SELECT s.token_hash, s.user_id, s.needs_mfa, s.ip, s.user_agent, s.created_at, s.expires_at,
+/** Reads one session row (joined with its user) by raw token. */
+function loadSessionRow(raw: string): SessionJoinRow | undefined {
+  return queryOne<SessionJoinRow>(
+    `SELECT s.token_hash, s.user_id, s.needs_mfa, s.impersonated_by, s.ip, s.user_agent,
+            s.created_at, s.expires_at,
             u.*
        FROM sessions s
        JOIN users u ON u.id = s.user_id
       WHERE s.token_hash = ? AND s.expires_at > datetime('now')`,
     sha256(raw),
   );
-  if (!row) return null;
-  if (!row.is_active) return null;
+}
 
+function toCurrentSession(row: SessionJoinRow): CurrentSession {
   const session: SessionRow = {
     token_hash: row.token_hash,
     user_id: row.user_id,
     needs_mfa: row.needs_mfa,
+    impersonated_by: row.impersonated_by ?? null,
     ip: row.ip,
     user_agent: row.user_agent,
     created_at: row.created_at,
     expires_at: row.expires_at,
   };
-  const user = toSessionUser(row as unknown as DbUser);
-  return { user, session };
+  return { user: toSessionUser(row), session };
+}
+
+/**
+ * Reads and validates the session cookie against the sessions table.
+ * Memoised per request so a page can call it freely.
+ *
+ * A support-access cookie (set by "Enter as learner") takes precedence while it
+ * is present: the request then acts as the learner. The admin's own session
+ * cookie is left untouched, so returning needs no sign-in.
+ */
+export const getSession = cache(async (): Promise<CurrentSession | null> => {
+  const cookieStore = await cookies();
+
+  const supportSigned = cookieStore.get(IMPERSONATION_COOKIE)?.value;
+  if (supportSigned) {
+    const raw = unsign(supportSigned);
+    if (raw) {
+      const row = loadSessionRow(raw);
+      // Defence in depth: a support session may only ever resolve to an active learner.
+      if (row && row.is_active && row.role === 'learner') {
+        const admin = row.impersonated_by ? findUserById(row.impersonated_by) : undefined;
+        return {
+          ...toCurrentSession(row),
+          support: { adminId: admin?.id ?? null, adminEmail: admin?.email ?? null },
+        };
+      }
+    }
+  }
+
+  const signed = cookieStore.get(SESSION_COOKIE)?.value;
+  if (!signed) return null;
+
+  const raw = unsign(signed);
+  if (!raw) return null;
+
+  const row = loadSessionRow(raw);
+  if (!row) return null;
+  if (!row.is_active) return null;
+
+  return toCurrentSession(row);
 });
 
 export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
@@ -140,8 +179,70 @@ export async function completeMfaStep(): Promise<void> {
   run('UPDATE users SET last_login_at = datetime(\'now\') WHERE id = ?', current.user.id);
 }
 
+/**
+ * Starts support access ("Enter as learner"): creates a fresh session row for the
+ * learner and stores it in the support cookie. The admin's own session cookie is
+ * never modified, so exiting support mode needs no sign-in.
+ */
+export async function createSupportSession(learnerId: number, adminId: number): Promise<void> {
+  const raw = token(32);
+  const expiresAt = futureIso(SESSION_DAYS * 24 * 60);
+  const headerList = await headers();
+
+  run(
+    `INSERT INTO sessions (token_hash, user_id, needs_mfa, impersonated_by, ip, user_agent, expires_at)
+     VALUES (?, ?, 0, ?, ?, ?, ?)`,
+    sha256(raw),
+    learnerId,
+    adminId,
+    headerList.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '127.0.0.1',
+    headerList.get('user-agent')?.slice(0, 250) ?? '',
+    expiresAt,
+  );
+
+  const cookieStore = await cookies();
+  cookieStore.set(IMPERSONATION_COOKIE, sign(raw), {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: false, // localhost demo over http
+    path: '/',
+    expires: new Date(expiresAt.replace(' ', 'T') + 'Z'),
+  });
+}
+
+export interface EndedSupport {
+  learner: SessionUser;
+  adminId: number | null;
+}
+
+/** Ends support access: deletes the learner session behind the support cookie. */
+export async function endSupportSession(): Promise<EndedSupport | null> {
+  const cookieStore = await cookies();
+  const signed = cookieStore.get(IMPERSONATION_COOKIE)?.value;
+  if (!signed) return null;
+  cookieStore.delete(IMPERSONATION_COOKIE);
+
+  const raw = unsign(signed);
+  if (!raw) return null;
+
+  const row = loadSessionRow(raw);
+  run('DELETE FROM sessions WHERE token_hash = ?', sha256(raw));
+  if (!row) return null;
+  return { learner: toSessionUser(row), adminId: row.impersonated_by ?? null };
+}
+
 export async function destroyCurrentSession(): Promise<void> {
   const cookieStore = await cookies();
+
+  // A support session is torn down alongside the admin's own session: "sign out"
+  // means signed out, not "quietly back to the admin console".
+  const supportSigned = cookieStore.get(IMPERSONATION_COOKIE)?.value;
+  if (supportSigned) {
+    const raw = unsign(supportSigned);
+    if (raw) run('DELETE FROM sessions WHERE token_hash = ?', sha256(raw));
+    cookieStore.delete(IMPERSONATION_COOKIE);
+  }
+
   const signed = cookieStore.get(SESSION_COOKIE)?.value;
   if (signed) {
     const raw = unsign(signed);
@@ -159,7 +260,8 @@ export function destroyAllSessionsForUser(userId: number): number {
 /** The stored hash of the current request's session, if any (used by the sessions list). */
 export async function currentSessionTokenHash(): Promise<string | null> {
   const cookieStore = await cookies();
-  const signed = cookieStore.get(SESSION_COOKIE)?.value;
+  const signed =
+    cookieStore.get(IMPERSONATION_COOKIE)?.value ?? cookieStore.get(SESSION_COOKIE)?.value;
   if (!signed) return null;
   const raw = unsign(signed);
   return raw ? sha256(raw) : null;

@@ -71,4 +71,6 @@ export const AUDIT_ACTIONS = {
   certificateRevoked: 'certificate.revoked',
   fileUploaded: 'file.uploaded',
   settingsChanged: 'settings.changed',
+  supportEntered: 'support.entered',
+  supportExited: 'support.exited',
 } as const;

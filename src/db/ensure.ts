@@ -14,6 +14,15 @@ async function main(): Promise<void> {
   const db = getDb();
   db.exec(fs.readFileSync(schemaPath, 'utf8'));
 
+  // ---- tiny forward migrations ---------------------------------------
+  // schema.sql only CREATEs tables that do not exist, so columns added after
+  // a database was first created need an explicit ALTER here.
+  const sessionColumns = db.prepare('PRAGMA table_info(sessions)').all() as { name: string }[];
+  if (!sessionColumns.some((column) => column.name === 'impersonated_by')) {
+    db.exec('ALTER TABLE sessions ADD COLUMN impersonated_by INTEGER REFERENCES users(id) ON DELETE SET NULL');
+    console.log('[db] migrated: sessions.impersonated_by (support access)');
+  }
+
   const { n: userCount } = db.prepare('SELECT COUNT(*) AS n FROM users').get() as { n: number };
 
   if (userCount === 0) {
