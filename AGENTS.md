@@ -385,6 +385,10 @@ course authoring. Delivered in five phases, one commit each:
    CRUD with inline rename and reorder, featured toggle (settings form + list star), title-only
    course creation, inline section/lesson add, click-to-edit titles, duplicate lesson/section/
    course, and sortable courses list with quick publish/feature/duplicate actions.
+6. `7622033` follow-up - the announcement gained a dashboard widget (live/off badge, text,
+   one-click audited toggle, paused-enrolments hint), and the coupons page gained a usage
+   section computed from paid orders (redemptions, discount given, net revenue, per-code rows
+   with a usage bar and last-used time).
 
 ### Verification
 
@@ -393,7 +397,7 @@ course authoring. Delivered in five phases, one commit each:
 | `npm run build` | clean - Next.js 16.4 (Turbopack) |
 | `npm run typecheck` | clean |
 | `npm run lint` | clean - 0 errors, 0 warnings |
-| `scripts/e2e/run_all.py` | 13/13 suites, 513+ checks (phase 3 53, phase 8 108) |
+| `scripts/e2e/run_all.py` | 13/13 suites, 548 checks (phase 3 53, phase 8 116) |
 
 Also exercised by hand in a browser: support round-trip (enter, learn, return, sign-out while
 impersonating signs out fully), staff redirects, announcement on the public site, pause notices,
