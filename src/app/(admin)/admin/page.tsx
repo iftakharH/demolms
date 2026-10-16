@@ -9,6 +9,8 @@ import {
   GraduationCap,
   LogIn,
   Mail,
+  Megaphone,
+  PauseCircle,
   Plus,
   Receipt,
   ScrollText,
@@ -28,6 +30,8 @@ import {
 import { adminOrders } from '@/lib/queries/admin-orders';
 import { gradingQueue } from '@/lib/queries/assessment';
 import { enterLearnerAccountAction } from '@/lib/actions/support-actions';
+import { toggleAnnouncementAction } from '@/lib/actions/admin-settings-actions';
+import { platformSettings } from '@/lib/settings';
 import { formatPence, timeAgo } from '@/lib/format';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge, CourseStatusBadge, OrderStatusBadge } from '@/components/ui/badge';
@@ -47,6 +51,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<'/a
   const learners = newestLearners(6);
   const courses = topCoursesByEnrolment(5);
   const audit = recentAuditEntries(6);
+  const settings = platformSettings();
 
   const windowRevenue = series.reduce((sum, point) => sum + point.revenuePence, 0);
   const windowOrders = series.reduce((sum, point) => sum + point.orders, 0);
@@ -223,6 +228,52 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<'/a
         </section>
 
         <div className="space-y-4">
+          <section className="card p-5">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <h2 className="section-title flex items-center gap-2">
+                <Megaphone className="size-4 text-brand-600" aria-hidden />
+                Announcement
+              </h2>
+              <Badge tone={settings.announcementEnabled ? 'success' : 'neutral'}>
+                {settings.announcementEnabled ? 'live' : 'off'}
+              </Badge>
+            </div>
+
+            {settings.announcementEnabled && settings.announcementText ? (
+              <p className="mt-3 rounded-xl border border-brand-200 bg-brand-50 px-3.5 py-2.5 text-sm text-brand-950">
+                {settings.announcementText}
+              </p>
+            ) : (
+              <p className="mt-3 text-sm text-ink-500">
+                No banner is showing on the site right now.
+              </p>
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              {user.role === 'admin' && settings.announcementText ? (
+                <form action={toggleAnnouncementAction}>
+                  <input type="hidden" name="back" value="/admin" />
+                  <button type="submit" className="btn-secondary btn-sm">
+                    {settings.announcementEnabled ? 'Turn off' : 'Turn on'}
+                  </button>
+                </form>
+              ) : null}
+              <Link href="/admin/settings" className="link text-sm">
+                Edit in settings
+              </Link>
+            </div>
+
+            {settings.enrolmentsPaused ? (
+              <p className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-3 text-xs text-amber-800">
+                <PauseCircle className="size-3.5 shrink-0" aria-hidden />
+                New enrolments are paused.
+                <Link href="/admin/settings" className="link">
+                  Manage
+                </Link>
+              </p>
+            ) : null}
+          </section>
+
           <section className="card overflow-hidden">
             <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
               <h2 className="section-title">Grading queue</h2>

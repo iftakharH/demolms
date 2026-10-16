@@ -7,7 +7,7 @@ import { requireAdminWriter } from '@/lib/auth';
 import { AUDIT_ACTIONS, logAudit } from '@/lib/audit';
 import { query, queryOne, run } from '@/lib/db';
 import { slugify } from '@/lib/ids';
-import { setSetting } from '@/lib/settings';
+import { setSetting, platformSettings } from '@/lib/settings';
 import type { FormState } from '@/lib/action-state';
 
 /**
@@ -24,6 +24,31 @@ function revalidateCatalog(): void {
 }
 
 /* --------------------------------------------------------- platform toggles */
+
+/** Quick on/off for the announcement banner, straight from the dashboard widget. */
+export async function toggleAnnouncementAction(formData: FormData): Promise<void> {
+  const admin = await requireAdminWriter();
+  const current = platformSettings();
+  const next = !current.announcementEnabled;
+
+  // switching on needs some text; send the admin to the settings form to add it
+  if (next && current.announcementText.trim().length === 0) {
+    redirect(`/admin/settings?error=${encodeURIComponent('Add some announcement text first.')}#platform`);
+  }
+
+  setSetting('announcement_enabled', next ? '1' : '0');
+  logAudit({
+    actor: { id: admin.id, email: admin.email, role: admin.role },
+    action: AUDIT_ACTIONS.settingsChanged,
+    entityType: 'settings',
+    entityId: 'announcement',
+    summary: `Announcement banner turned ${next ? 'on' : 'off'}`,
+  });
+
+  revalidateCatalog();
+  revalidatePath('/admin');
+  redirect(String(formData.get('back') ?? '/admin'));
+}
 
 export async function updatePlatformSettingsAction(
   _prev: FormState,

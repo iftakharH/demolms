@@ -99,7 +99,7 @@ def main() -> int:
             check(f"dashboard KPI: {label}", has(admin, label), dashboard[:200])
         check("dashboard has the 30-day chart", "Revenue, last 30 days" in dashboard)
         check("chart shows revenue bars", admin.locator("div[title*='£']").count() >= 1)
-        for widget in ["Recent orders", "Grading queue", "Quick actions", "Newest learners", "Top courses", "Latest activity"]:
+        for widget in ["Recent orders", "Grading queue", "Quick actions", "Newest learners", "Top courses", "Latest activity", "Announcement"]:
             check(f"dashboard widget: {widget}", widget in dashboard)
         check("dashboard KPI: Refunded", "Refunded" in dashboard)
         check("dashboard KPI: Certificates", "Certificates" in dashboard)
@@ -163,6 +163,20 @@ def main() -> int:
         admin.goto(f"{BASE}/admin/coupons")
         admin.wait_for_load_state("networkidle")
         check("coupon list shows the seeded coupons", has(admin, "WELCOME10") and has(admin, "FREE100"))
+
+        usage_section = admin.locator("section:has-text('Coupon usage')")
+        usage_text = usage_section.inner_text().lower()
+        check(
+            "coupon usage analytics render",
+            "redemptions" in usage_text and "net revenue" in usage_text and "discount given" in usage_text,
+            usage_text[:200],
+        )
+        check(
+            "analytics lists the redeemed coupons",
+            "typescript20" in usage_text and "welcome10" in usage_text,
+            usage_text[:300],
+        )
+        check("analytics shows money given away", "£" in usage_text, usage_text[:200])
         admin.fill("#code", "SAVE15")
         admin.select_option("#kind", "percent")
         admin.fill("#value", "15")
@@ -398,6 +412,44 @@ def main() -> int:
         public_page.goto(f"{BASE}/")
         public_page.wait_for_load_state("networkidle")
         check("announcement shows on the public site", has(public_page, "Phase 8 announcement"), public_page.url)
+
+        # the dashboard widget mirrors it, with a one-click toggle
+        admin.goto(f"{BASE}/admin")
+        admin.wait_for_load_state("networkidle")
+        dashboard_body = body(admin)
+        check(
+            "dashboard widget shows the announcement",
+            "Announcement" in dashboard_body and "Phase 8 announcement" in dashboard_body,
+            dashboard_body[:400],
+        )
+        admin.click("button:has-text('Turn off')")
+        toggled_off = False
+        for _ in range(40):
+            if admin.locator("button:has-text('Turn on')").count() == 1:
+                toggled_off = True
+                break
+            admin.wait_for_timeout(250)
+        check("announcement can be turned off from the widget", toggled_off, body(admin)[:300])
+
+        public_page.goto(f"{BASE}/")
+        public_page.wait_for_load_state("networkidle")
+        check(
+            "announcement is gone from the public site",
+            "Phase 8 announcement" not in body(public_page),
+            public_page.url,
+        )
+
+        admin.click("button:has-text('Turn on')")
+        toggled_on = False
+        for _ in range(40):
+            if admin.locator("button:has-text('Turn off')").count() == 1:
+                toggled_on = True
+                break
+            admin.wait_for_timeout(250)
+        check("announcement can be turned back on from the widget", toggled_on, body(admin)[:300])
+
+        admin.goto(f"{BASE}/admin/settings")
+        admin.wait_for_load_state("networkidle")
 
         # pause enrolments: the course page stops selling and the server refuses
         admin.check("input[name=enrolments_paused]")

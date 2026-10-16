@@ -91,3 +91,46 @@ export function couponUsageLabel(coupon: CouponRow): string {
   const limit = coupon.max_uses === null ? 'unlimited' : `${coupon.max_uses}`;
   return `${coupon.used_count} / ${limit} used`;
 }
+
+/* ------------------------------------------------------------------ analytics */
+
+export interface CouponUsageRow {
+  code: string;
+  uses: number;
+  discountPence: number;
+  netRevenuePence: number;
+  lastUsedAt: string | null;
+}
+
+export interface CouponAnalytics {
+  totalUses: number;
+  totalDiscountPence: number;
+  netRevenuePence: number;
+  rows: CouponUsageRow[];
+}
+
+/**
+ * Coupon usage straight from the orders table, so the numbers always match the
+ * money: redemptions are paid orders carrying the code (refunds still count as
+ * redemptions; net revenue deducts them).
+ */
+export function couponAnalytics(): CouponAnalytics {
+  const rows = query<CouponUsageRow>(
+    `SELECT coupon_code AS code,
+            COUNT(*) AS uses,
+            COALESCE(SUM(discount_pence), 0) AS discountPence,
+            COALESCE(SUM(total_pence - refunded_pence), 0) AS netRevenuePence,
+            MAX(paid_at) AS lastUsedAt
+       FROM orders
+      WHERE coupon_code IS NOT NULL AND paid_at IS NOT NULL
+      GROUP BY coupon_code
+      ORDER BY uses DESC, netRevenuePence DESC`,
+  );
+
+  return {
+    totalUses: rows.reduce((sum, row) => sum + row.uses, 0),
+    totalDiscountPence: rows.reduce((sum, row) => sum + row.discountPence, 0),
+    netRevenuePence: rows.reduce((sum, row) => sum + row.netRevenuePence, 0),
+    rows,
+  };
+}

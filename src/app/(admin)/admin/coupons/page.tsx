@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import { BadgePercent } from 'lucide-react';
 import { requireStaff } from '@/lib/auth';
-import { couponUsageLabel, listCoupons } from '@/lib/coupons';
+import { couponAnalytics, couponUsageLabel, listCoupons } from '@/lib/coupons';
 import { categoryOptions } from '@/lib/queries/admin-courses';
 import { query } from '@/lib/db';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CouponForm } from '@/components/admin/coupon-form';
-import { formatDate, timeAgo } from '@/lib/format';
+import { formatDate, formatPence, timeAgo } from '@/lib/format';
 import { toggleCouponAction } from '@/lib/actions/admin-coupon-actions';
 
 export const dynamic = 'force-dynamic';
@@ -17,6 +17,7 @@ export const metadata: Metadata = { title: 'Coupons · Admin' };
 export default async function AdminCouponsPage() {
   const user = await requireStaff('/admin/coupons');
   const coupons = listCoupons();
+  const usage = couponAnalytics();
   const courses = query<{ id: number; title: string; slug: string }>(
     'SELECT id, title, slug FROM courses ORDER BY title',
   );
@@ -31,6 +32,73 @@ export default async function AdminCouponsPage() {
           usage limit. Checkout validates every rule before an order is created.
         </p>
       </div>
+
+      <section className="card p-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="section-title">Coupon usage</h2>
+            <p className="mt-1 text-sm text-ink-500">
+              Redemptions and money, computed from paid orders - a refunded order still counts as a
+              redemption, and net revenue deducts it.
+            </p>
+          </div>
+          {usage.rows[0] ? <Badge tone="brand">Most used: {usage.rows[0].code}</Badge> : null}
+        </div>
+
+        <dl className="mt-4 grid gap-4 sm:grid-cols-3">
+          <UsageStat label="Redemptions" value={String(usage.totalUses)} />
+          <UsageStat label="Discount given" value={formatPence(usage.totalDiscountPence)} />
+          <UsageStat label="Net revenue with coupons" value={formatPence(usage.netRevenuePence)} />
+        </dl>
+
+        {usage.rows.length === 0 ? (
+          <p className="mt-4 text-sm text-ink-500">No coupon has been redeemed yet.</p>
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="table-base">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th className="text-right">Redemptions</th>
+                  <th className="text-right">Discount given</th>
+                  <th className="text-right">Net revenue</th>
+                  <th>Last used</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usage.rows.map((row) => {
+                  const share = usage.rows[0].uses > 0 ? row.uses / usage.rows[0].uses : 0;
+                  return (
+                    <tr key={row.code}>
+                      <td>
+                        <code className="rounded bg-ink-100 px-1.5 py-0.5 font-mono text-xs font-semibold">
+                          {row.code}
+                        </code>
+                      </td>
+                      <td className="text-right">
+                        <span className="inline-flex items-center gap-2">
+                          <span className="hidden h-1.5 w-24 overflow-hidden rounded-full bg-ink-100 sm:inline-block">
+                            <span
+                              className="block h-full rounded-full bg-brand-500"
+                              style={{ width: `${Math.max(6, share * 100)}%` }}
+                            />
+                          </span>
+                          {row.uses}
+                        </span>
+                      </td>
+                      <td className="text-right">{formatPence(row.discountPence)}</td>
+                      <td className="text-right">{formatPence(row.netRevenuePence)}</td>
+                      <td className="text-xs text-ink-500">
+                        {row.lastUsedAt ? timeAgo(row.lastUsedAt) : '-'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
         <section className="space-y-4">
@@ -98,6 +166,15 @@ export default async function AdminCouponsPage() {
           )}
         </aside>
       </div>
+    </div>
+  );
+}
+
+function UsageStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-line p-4">
+      <dt className="text-xs font-medium tracking-wide text-ink-500 uppercase">{label}</dt>
+      <dd className="stat-value mt-1">{value}</dd>
     </div>
   );
 }
