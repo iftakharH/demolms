@@ -32,8 +32,10 @@ will not create or pay for anything without your explicit go-ahead.
 
 ## Render, step by step
 
-Render was the chosen route. These steps are written against Render's own documentation, which is
-worth knowing about in advance:
+Render was the chosen route. There are two ways to set it up: the **blueprint**
+(`render.yaml` in the repo root - Dashboard -> New -> Blueprint -> pick the repo -> Apply) creates the
+service, the disk and the generated secrets in one go, or the manual steps below. Either way, the
+points worth knowing in advance are:
 
 - **Disks require a paid instance** - a free web service cannot attach one, and it also spins down
   after 15 minutes idle and loses its filesystem.
