@@ -2,6 +2,13 @@ import type { MetadataRoute } from 'next';
 import { allPublishedCourseSlugs } from '@/lib/queries/catalog';
 import { APP_URL } from '@/lib/env';
 
+/**
+ * Rendering this per request (rather than baking it at build time) keeps the URLs
+ * in step with APP_URL: change the env var on a host and the sitemap follows on the
+ * next request, instead of needing a redeploy to un-bake localhost.
+ */
+export const dynamic = 'force-dynamic';
+
 /** Static + dynamic routes for search engines. */
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();

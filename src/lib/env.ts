@@ -11,8 +11,23 @@ export const SESSION_SECRET =
 export const PAYMENT_WEBHOOK_SECRET =
   process.env.PAYMENT_WEBHOOK_SECRET ?? 'whsec_demo_local_secret';
 
-/** Base URL used in metadata, sitemap and emails. */
-export const APP_URL = process.env.APP_URL ?? 'http://localhost:3000';
+/**
+ * Base URL used in metadata, sitemap and emails.
+ *
+ * APP_URL always wins. When it is unset, fall back to the public URL the host
+ * publishes itself (Render sets RENDER_EXTERNAL_URL, Railway sets
+ * RAILWAY_PUBLIC_DOMAIN) before the localhost default - otherwise a deployment
+ * that forgets APP_URL sends verification and password-reset links to
+ * http://localhost, which look fine in the logs and are useless to a visitor.
+ *
+ * Note that /sitemap.xml is prerendered at build time, so changing APP_URL needs a
+ * redeploy to show up there (env changes trigger one on Render).
+ */
+const HOST_URL =
+  process.env.RENDER_EXTERNAL_URL ??
+  (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : undefined);
+
+export const APP_URL = process.env.APP_URL ?? HOST_URL ?? 'http://localhost:3000';
 
 /**
  * Dev tools: TOTP code shown on screen, demo-account quick fill, /dev/outbox

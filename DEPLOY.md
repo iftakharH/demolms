@@ -72,6 +72,15 @@ points worth knowing in advance are:
 | `PAYMENT_WEBHOOK_SECRET` | a random string starting `whsec_` - signs the mock webhook |
 | `DEMO_HIDE_DEV_TOOLS` | optional, `true` to hide the on-screen MFA code, demo-account quick-fill buttons and the footer outbox link |
 
+If `APP_URL` is missing, the app now falls back to the public URL the host publishes itself - Render
+sets `RENDER_EXTERNAL_URL`, Railway sets `RAILWAY_PUBLIC_DOMAIN` - and only then to `localhost:3000`.
+Set `APP_URL` explicitly anyway: it is the only value that also covers a custom domain, and it takes
+precedence over the fallback.
+
+**Symptom of getting this wrong:** everything looks fine, but the links inside every email in
+`/dev/outbox` point at `http://localhost:3000`, so a visitor who registers cannot verify their email.
+Check `/sitemap.xml` - if it lists `http://localhost:3000`, the variable is wrong.
+
 Generate the two secrets locally and paste them in (do not reuse the defaults from `src/lib/env.ts`):
 
 ```bash
