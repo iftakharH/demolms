@@ -278,11 +278,20 @@ def main() -> int:
 
         # ---------------------------------------------------------- console health
         # "Failed to load resource" is asserted separately: the deliberate 404
-        # above legitimately logs one. Everything else must be silent.
+        # above legitimately logs one. Everything else must be silent, with one
+        # documented exception: on the *first* MFA render of a cold `next dev`
+        # process, Node's DEP0005 (`new Buffer()` inside otplib -> thirty-two) is
+        # forwarded into the browser console. It comes from a dependency, fires
+        # once per process, and only reaches the browser because `next dev` mirrors
+        # server logs into it (a production build logs it to the server only).
+        # Re-running this suite against the same server is green without the exclusion.
         noisy = [
             error
             for error in console_errors
-            if "Failed to load resource" not in error and "Download the React DevTools" not in error
+            if "Failed to load resource" not in error
+            and "Download the React DevTools" not in error
+            and "DEP0005" not in error
+            and "Buffer() is deprecated" not in error
         ]
         check("no runtime console errors", len(noisy) == 0, " | ".join(noisy[:3]))
 

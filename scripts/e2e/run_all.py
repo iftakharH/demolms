@@ -28,6 +28,7 @@ SUITES = [
     ("Phase 10b · full walkthrough", "phase10_walkthrough.py"),
     ("Phase 10c · print styles", "phase10_print.py"),
     ("Phase 10d · learner UX", "phase10_learner_ui.py"),
+    ("Phase 10e · design system", "phase10e_design.py"),
 ]
 
 summary: list[tuple[str, bool, str]] = []

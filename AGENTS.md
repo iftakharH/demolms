@@ -411,6 +411,98 @@ every suite passes on a fresh `next dev`.
 Deliberately `UNVERIFIED`: no real network disconnection test (unchanged from earlier passes);
 the announcement banner and paused states were checked via Playwright, not by hand on a phone.
 
+## Results - design system pass (2026-10-17)
+
+Requested follow-up: "make the design really modern and unique. not a common ai design", plus run the
+project so it can be tested, and answer whether it can go on GitHub and be deployed to Vercel to show
+to others.
+
+`design-motion` was loaded first, and per the skill's non-negotiable rule the art direction was
+**asked, not assumed**. The user chose: **Calm Minimal**, **generative cover art** as the signature,
+**subtle motion with a real dark mode**, and a **clickable link on a disk-backed Node host**.
+
+### What changed
+
+- **`docs/DESIGN.md`** - the direction written down: type scale, near-monochrome palette, ink primary
+  actions, one teal accent doing real work, hairline separation instead of card shadows, a motion
+  scale, and the cover-art system. Reference file for every future UI change.
+- **Token layer rebuilt** (`globals.css`): every colour is a raw variable, remapped once under
+  `[data-theme="dark"]`, and exposed to Tailwind through `@theme inline`. One remap re-themes the app,
+  so components need no `dark:` variants.
+- **Theme**: light / dark / system, remembered in `localStorage`, applied before first paint by an
+  inline script in `<head>`. The control is read through `useSyncExternalStore` (no setState-in-effect,
+  no hydration mismatch): compact toggle in the header from `sm` up, labelled segmented control in the
+  phone sheet.
+- **Type**: Instrument Sans self-hosted in place of Inter; `scripts/fetch-fonts.mjs` fetches it.
+- **Signature - generative covers** (`components/course/course-art.tsx`): each course draws its own
+  cover from its own data (FNV-1a hash -> bar heights, accent on the tallest, course initial ghosted,
+  hairline baseline plus origin mark). Deterministic, inline SVG, theme-aware, and the fallback
+  everywhere a cover appears; an uploaded thumbnail still renders as `<img>`. The seed no longer writes
+  cover SVGs and now seeds `thumbnail_path = null`, so covers have no files to clean up.
+- **Navigation**: glass retired and the naming made honest - `glass-header.tsx` -> `nav-shell.tsx`
+  (`NavShell`), `.glass-nav` -> `.nav-shell`, `.glass-panel` -> `.popover`, aurora/frost/sheen removed,
+  the meter cut back to one accent hairline, brand tile de-gradiented. The horizontal condense stays.
+- **`scripts/sweep-tokens.mjs`** (idempotent, rerunnable): mapped 165 literal palette utilities across
+  49 files onto semantic tokens (`success`/`warning`/`danger`/`info` with soft/strong/line, `bg-surface`,
+  `bg-scrim`, `bg-code`), so status colours stay legible on their own tints in both themes. Level badges
+  went neutral - colour is for status, not taxonomy.
+- **Boot seeding** (`src/instrumentation.ts`): at server start it applies the schema, forward
+  migrations, and seeds **only when the database is empty**, so a fresh persistent disk fills itself in
+  with no shell step. `ensure.ts` became an exported `ensureDatabase()`; `ensure-cli.ts` is the CLI
+  entry for `predev` / `prebuild`.
+- **Deployment material**: `DEPLOY.md` (host requirements, what survives a redeploy, and an honest
+  disclosure of what a public URL exposes - public admin credentials, on-screen MFA codes, a public
+  outbox, mock payments) and `docs/host-research.md` (verified 2026-10-17: Fly.io ~$2.34/mo, Railway
+  ~$6-8/mo, Render $7.25/mo; Vercel cannot run this app and the reasons are written up).
+- **First-push hygiene**: `.gitignore` excludes runtime uploads (test submissions, avatars,
+  timestamped uploads) and 81 tracked upload files were untracked, keeping only
+  `videos/sample.mp4`, `videos/sample.vtt` and `videos/sample-poster.jpg`, which need ffmpeg to rebuild.
+  `tsx` moved to `dependencies` because the host's build step runs it.
+- **`scripts/design-review.py`**: captures the key pages at three widths in both themes for eyeballing
+  (not a pass/fail suite), and **`scripts/e2e/phase10e_design.py`**: the design system's own suite.
+
+### Verification
+
+| Command | Result |
+| --- | --- |
+| `npm run build` | clean |
+| `npm run typecheck` | clean |
+| `npm run lint` | clean - 0 errors, 0 warnings |
+| `scripts/e2e/run_all.py` | 14/14 suites, 598 checks |
+| `next start` on :3100 (production) | home, catalogue, verify page, static uploads and the certificate PDF's 401 all correct; `phase10a` 23/23 and `phase10e` 50/50 run against the production build |
+| `scripts/fresh-clone-check.ps1` | all checks pass: a tree with only the files git tracks (empty `data/`, no generated assets) boots, seeds itself, regenerates the assets, and serves the catalogue with drawn covers and the sample video |
+
+### Bugs found and fixed while doing it
+
+1. `@theme inline` does not emit `--font-sans` as a runtime variable, so a hand-written
+   `font-family: var(--font-sans)` silently fell back to the browser default. Caught by the new suite,
+   not by eye; the runtime stack now lives in `--font-ui`.
+2. React warned "Encountered a script tag while rendering React component" for the inline theme script
+   in `<body>`; moved into `<head>` (verified gone in the dev log).
+3. A caller's `hidden sm:inline-flex` cannot beat a component's own `inline-flex` (same display
+   property, stylesheet order decides) so the compact toggle showed at 390px and crowded the phone
+   header; the toggle is now wrapped.
+4. The cover art was nearly invisible in dark mode (bars in `ink-300` on `ink-50`) and the ghost glyph
+   clipped at the frame edge; both got explicit dark values and a nudge.
+5. Removing the seeded cover SVGs broke phase 3's upload fixture, which uploaded a seeded cover as its
+   test thumbnail; the suite now writes its own fixture.
+6. Phase 1's console check was permanently red on a fresh dev server (documented `DEP0005` from
+   `otplib` forwarded into the browser console by `next dev`); the suite now excludes it with the
+   reason written down.
+
+### Deliberately `UNVERIFIED`
+
+- **Nothing was deployed.** No GitHub remote exists, no host account, no card was entered. The Vercel
+  verdict comes from reading Vercel's documented filesystem behaviour against this app's write paths,
+  not from a deployment.
+- The Fly.io route needs a Dockerfile that has not been written or tested.
+- The production check ran `next build` / `next start` locally on Windows, not on a Linux host.
+- `scripts/fresh-clone-check.ps1` verifies a clean checkout **with the installed dependency tree
+  copied in** (Turbopack refuses a junctioned `node_modules`, and `npm install` needs the network). The
+  seeding, asset regeneration and serving paths are verified; the install step itself is not, so
+  "fresh clone + `npm install`" is still unproven on a machine that has never had `node_modules`.
+- Unchanged from earlier passes: no physically disconnected network.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know

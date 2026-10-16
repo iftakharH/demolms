@@ -1,6 +1,10 @@
 /**
  * Makes sure the demo database and generated assets exist.
- * Runs automatically before `npm run dev` and `npm run build`.
+ *
+ * Called from three places: `npm run dev` and `npm run build` (via
+ * `src/db/ensure-cli.ts`), and once at server start (`src/instrumentation.ts`),
+ * which is what lets a fresh deployment with an empty disk seed itself.
+ *
  * Idempotent: an existing database is left alone, an empty one is seeded.
  */
 import fs from 'node:fs';
@@ -9,7 +13,7 @@ import { spawnSync } from 'node:child_process';
 import { getDb } from '../lib/db';
 import { runSeed } from './seed';
 
-async function main(): Promise<void> {
+export async function ensureDatabase(): Promise<void> {
   const schemaPath = path.join(process.cwd(), 'src', 'db', 'schema.sql');
   const db = getDb();
   db.exec(fs.readFileSync(schemaPath, 'utf8'));
@@ -48,8 +52,3 @@ async function main(): Promise<void> {
     }
   }
 }
-
-main().catch((error: unknown) => {
-  console.error(error);
-  process.exitCode = 1;
-});

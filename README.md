@@ -32,6 +32,7 @@ Other useful scripts:
 | `npm run lint` | ESLint, zero warnings allowed |
 | `npm run assets` | regenerates the sample lesson video + poster with ffmpeg |
 | `npm run db:reset` | alias of `npm run seed` |
+| `powershell -File scripts/fresh-clone-check.ps1` | proves a clean checkout boots, seeds itself and serves pages (see Verification) |
 
 Requires **Node 20.9+** (developed on Node 22). `ffmpeg` is optional - it is only used once to render
 the sample lesson clip, and the generated file is already committed.
@@ -62,12 +63,16 @@ in the authenticator app.
 A click-through that shows the whole product. Everything below happens on your machine.
 
 **1. Public site (30s)**
-1. Home page - hero with live numbers, featured courses, categories, free-to-start section.
+1. Home page - hero with live numbers, featured courses, categories, free-to-start section. Every course
+   cover is drawn from that course's own data (a bar per lesson, the tallest in the accent); nothing is a
+   stock image.
 2. `/courses` - search `dashboard`, then filter *Free only* + *Under 1 hour*, then change *Sort by*.
    Note the URL carries every filter, so any view is shareable.
 3. Open **TypeScript for Production Teams** - outcomes, curriculum with two **free preview** lessons
    (locked lessons are genuinely not links), instructor, sticky price card. `View source` and look for
    the JSON-LD `Course` block.
+4. Tap the **theme control** in the header and switch to Dark - the choice survives a reload, and there
+   is no white flash on load.
 
 **2. Buy a course with a coupon (60s)**
 4. On the course page click **Buy course** - you are signed in as the learner? If not, use the
@@ -141,8 +146,31 @@ A click-through that shows the whole product. Everything below happens on your m
 | **Transactional email** | An `emails` table + `/dev/outbox` | Every email the app would send is stored and viewable. Verification, password-reset, receipt, grading, certificate and refund emails all land there, and the links inside them **work**. |
 | **Video hosting** | `public/uploads/videos/sample.mp4` | A 24-second clip generated locally with ffmpeg, with a burned-in timecode so *resume* is verifiable by eye, plus a WebVTT caption file. |
 | **Object storage** | `public/uploads/**` | Admin uploads (video, captions, poster, thumbnail, resources) write here. Lesson resources and submission files are **never linked directly** - they are streamed through access-checked route handlers. |
-| **CDN / external fonts** | `src/fonts/Inter-Variable.woff2` | Fetched once by `scripts/fetch-fonts.mjs` and self-hosted, so the app has no runtime network dependencies. |
+| **CDN / external fonts** | `src/fonts/InstrumentSans-Variable.woff2` | Fetched once by `scripts/fetch-fonts.mjs` and self-hosted, so the app has no runtime network dependencies. |
 | **PDF service** | `pdfkit` + `qrcode` | Certificate PDFs are generated in-process. |
+
+---
+
+## Design
+
+The interface follows a written art direction - **Calm Minimal** - recorded in `docs/DESIGN.md`
+together with the type scale, the palette, the motion rules and the cover-art system. In short:
+
+- **One typeface**, Instrument Sans, self-hosted in `src/fonts/`, on a real type scale with a 68ch
+  measure for body copy.
+- **Near-monochrome.** A single cool-neutral ramp carries almost everything, and separation comes from
+  hairlines rather than shadows - elevation is reserved for things that genuinely float (menus, sheets,
+  toasts). The accent is a deep teal, used for meaning (links, focus, active, progress), never as
+  decoration.
+- **Primary actions are ink**, not colour: near-black on light, near-white on dark.
+- **Generative cover art.** Every course draws its cover from its own data - a bar per lesson on a
+  hairline baseline, the tallest in accent, the course initial ghosted behind it. Deterministic, inline
+  SVG, theme-aware, no image files involved; an admin-uploaded thumbnail still wins over it.
+- **Dark mode is designed, not inverted**, and remembers your choice - light / dark / system, applied
+  before first paint so there is no flash. The toggle sits in the header on desktop and in the menu
+  sheet on a phone.
+- **Motion is subtle by design**: 130 / 190 / 260ms on one ease-out curve, nothing animates on load,
+  and `prefers-reduced-motion: reduce` collapses all of it.
 
 ---
 
@@ -203,9 +231,10 @@ Everything here was chosen for demo clarity; each item is somewhere a real build
    the database holds.
 8. **PDF downloads** are limited to the certificate owner and staff; the public surface is the
    verification page.
-9. **Uploads are never garbage-collected.** Replacing a thumbnail leaves the old file on disk, because
-   seeded covers are shared between courses and deleting a shared file would break another row. A real
-   product would reference-count.
+9. **Uploads are never garbage-collected.** Replacing an uploaded thumbnail leaves the old file on
+    disk, because two courses could share it and deleting it would break the other row. A real product
+    would reference-count. Course covers that nobody uploaded are **not files at all** - they are drawn
+    from the course's own data, so there is nothing to clean up.
 10. **Markdown is sanitised with a small allow-list** (script/style/iframe removal, `on*` handlers and
     `javascript:` stripped). Content is admin-authored, so a full HTML sanitiser was not worth the
     dependency.
@@ -238,8 +267,11 @@ src/
   db/                  # schema.sql, seed.ts (content + data), ensure.ts
   lib/                 # auth, db, payments, mailer, certificates, uploads, quiz, progress,
                        # rate-limit, audit, notify, markdown, format, env, actions/, queries/
-  fonts/               # self-hosted Inter
+  fonts/               # self-hosted Instrument Sans
+docs/DESIGN.md         # art direction: type, colour, motion, the cover-art system
+docs/host-research.md  # hosting options with verified 2026 prices
 docs/next16-notes.md   # what changed in Next 16 and what this app relies on
+DEPLOY.md              # what a disk-backed host needs, and what a public URL exposes
 scripts/               # asset + font generators, e2e test suites
 public/uploads/        # generated demo assets + runtime uploads
 data/demolms.db        # SQLite database (git-ignored, recreated by the seed)
@@ -267,9 +299,10 @@ end-to-end suite. The suites live in `scripts/e2e/` and drive a real Chromium ag
 | `phase10_walkthrough.py` | the whole journey in one session: register → verify → browse → buy with a coupon → learn/resume → quiz → assignment → grade → certificate → QR verify → revoke → refund → auditor read-only → audit trail |
 | `phase10_print.py` | receipts and certificates print cleanly (chrome hidden, content kept) |
 | `phase10_learner_ui.py` | the ownership rules (an owned course shows progress and no price anywhere, the catalogue marks owned courses, a returning learner gets a personalised hero) and the learner surfaces (dashboard, my learning tabs/search/sort, player up-next + shortcuts, grades, certificates, profile, mobile tab bar) |
+| `phase10e_design.py` | the design system: the self-hosted face actually loads, tokens defined, the theme choice persists and is applied before paint, dark mode is designed (surfaces raised, hairlines lighter), covers are generative and per-course, no overflow at 390/768/1280 in **both** themes, reduced motion collapses the scale |
 
 `scripts/e2e/run_all.py` runs all of them against a freshly seeded database and prints one summary -
-412 checks across twelve suites at the time of writing:
+598 checks across fourteen suites at the time of writing:
 
 Run one with the dev server up, for example:
 

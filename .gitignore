@@ -43,3 +43,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# runtime uploads: `npm run seed` regenerates the seeded assets, and clicking
+# through the app creates the rest. Keeping them out of the repo stops test runs
+# and demo clicks from piling up in git history. The only uploads that cannot be
+# rebuilt offline - the sample video, its poster and captions - stay tracked.
+/public/uploads/avatars/*
+/public/uploads/captions/*
+/public/uploads/resources/*
+/public/uploads/submissions/*
+/public/uploads/thumbnails/*
+/public/uploads/videos/*
+!/public/uploads/videos/sample.mp4
+!/public/uploads/videos/sample-poster.jpg
+!/public/uploads/videos/sample.vtt

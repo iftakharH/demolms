@@ -1,0 +1,25 @@
+# Hosting research (Oct 2026) — single-instance Node/Next.js app with persistent SQLite + uploads
+
+| Host | Free tier? | Persistent disk | Cheapest setup with disk | GitHub deploy (build/start cmd) | Env vars + custom domain on cheapest plan | SQLite notes |
+|---|---|---|---|---|---|---|
+| **Fly.io** | **No** — free tier removed; only a trial (2 h machine time or 7 days, no card), then credit card required | Yes — Volumes, $0.15/GB/mo, attachable to any app | **~$2.34/mo**: `shared-cpu-1x` 256 MB Machine $2.19 (iad/ewr) + 1 GB volume $0.15. 512 MB = $3.69 + $0.15 | Yes, `fly launch` (Dockerfile or buildpacks; config in `fly.toml`), `fly secrets` for env | Yes — first 10 single-hostname SSL certs free, shared IPv4 free | Volume is per-Machine: keep it to ONE Machine. Region-pinned volume |
+| **Railway** | Yes ($0, $1/mo usage credit, 1 vCPU/0.5 GB, 3 services, 500 MB volume, **0 custom domains**) | Yes — volumes on all plans (Free max 500 MB), $0.15/GB/mo | **Hobby $5/mo** (+ usage above the $5 included credit; a 0.5 GB always-on service ≈ $5/mo usage, so realistically **$6–8/mo**), 2 custom domains | Yes — GitHub autodeploys, configurable build + start commands (Nixpacks/Dockerfile) | Yes on Hobby; **custom domain NOT on Free** (only `*.up.railway.app`) | Volumes need a single replica (max 1 on Free/Hobby) — fine for SQLite. Free tier credit runs out in days; not viable for always-on |
+| **Render** | Yes — Free web service: 0.1 CPU/512 MB, **spins down after 15 min idle** (~1 min cold start), 750 free instance h/mo | **Paid compute only** — "Free web services cannot" attach disks; disks $0.25/GB/mo | **$7.25/mo**: $7 (0.5 CPU/512 MB) + 1 GB disk. No cheaper paid compute exists | Yes — auto-build from repo, configurable build/start/root dir | Yes — env vars, 2 custom domains + TLS included on Hobby | Disk = single instance only, no scaling, no zero-downtime deploys; disk unavailable during build. Correct for SQLite |
+| **Koyeb** | Yes, but: **credit card required** ($29 pre-auth hold; signup starts on $29 Pro, downgradeable to Starter). Free instance: 512 MB, 0.1 vCPU, 2 GB SSD, scales to zero after 1 h, **no Volumes** | Yes, but **public preview** (1–10 GB, scale-of-one, 2 regions, no redundancy, not on `free`/`eco` instances); pricing page lists Volumes under the **Pro ($29/mo)** feature set | Starter PAYG + `nano` (0.25 vCPU/256 MB) **$2.68/mo** *if* volumes are allowed on Starter — UNVERIFIED; otherwise Pro $29/mo | Yes — GitHub push deploys, native builds, secrets (env vars) | Custom domains on paid tiers (100 in Pro); free tier gets `*.koyeb.app` | Volumes are preview-grade, single-instance, no redundancy. Muddied by the Feb 2026 Mistral acquisition |
+| **Northflank** | Yes — "Sandbox" tier: 2 free services (always-on, no sleeping), 1 free addon, free SSL + custom domains | Volumes $0.15/GB/mo; **availability on the free tier UNVERIFIED** | Pay-as-you-go: `nf-compute-10` (0.1 vCPU/256 MB) $2.70/mo + disk | Yes — Git builds (GitHub/GitLab/Bitbucket), Dockerfiles or buildpacks, secrets, custom domains + free TLS | Yes | Single-instance volumes OK for SQLite; free-tier compute limits tight |
+
+## Recommendation
+
+**Cheapest: Fly.io, ~$2.34–$4.84/mo.** It is the only host where a single-instance Node app with a real persistent volume costs under $5, and everything you need is included at that price: volume $0.15/GB/mo, free shared IPv4 + first 10 custom-hostname SSL certs, env vars via `fly secrets`. The catch: no free tier since Oct 2024 — a trial only, then a credit card is mandatory. Keep exactly one Machine attached to the volume so SQLite stays single-writer. **Second choice: Railway Hobby, ~$6–8/mo** — the best GitHub-deploy DX and volumes included, but the $5 fee only covers ~$5 of usage and a 0.5 GB always-on service eats the whole credit, plus 2 custom domains. Its $0 free plan technically allows a 500 MB volume but has no custom domain and only $1/mo of credit (≈5 days of runtime), so it is not viable for a persistent demo. Render (free tier spins down and wipes the filesystem — unusable for SQLite) is third at $7.25/mo.
+
+## Sources (fetched 2026-10-17)
+
+- https://fly.io/docs/about/pricing/ (no free tier, trial, machine + volume prices, SSL/IP)
+- https://railway.com/pricing and https://docs.railway.com/reference/pricing/plans (plans, credits, volume caps, domain counts)
+- https://docs.railway.com/volumes (mount paths, single-replica volumes)
+- https://render.com/pricing (compute tiers, disk $0.25/GB, Hobby features)
+- https://docs.render.com/free (spin-down, 750 h, "Free web services cannot" attach disks)
+- https://docs.render.com/disks (disks require paid service, single instance, deploy caveats)
+- https://www.koyeb.com/pricing and https://www.koyeb.com/docs/faqs/pricing (plans, $29 hold, free tier)
+- https://www.koyeb.com/docs/reference/instances (free instance limits) and /docs/reference/volumes (preview volumes)
+- https://northflank.com/pricing (Sandbox tier, compute + disk prices, Git builds, custom domains)

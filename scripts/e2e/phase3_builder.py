@@ -22,6 +22,17 @@ VIDEO = os.path.join(ROOT, "public", "uploads", "videos", "sample.mp4")
 CAPTIONS = os.path.join(ROOT, "public", "uploads", "videos", "sample.vtt")
 RESOURCE = os.path.join(ROOT, "public", "uploads", "resources", "migration-worksheet.pdf")
 
+# The suite writes its own thumbnail, so uploading one never depends on a seeded
+# file (covers are generative now - see src/components/course/course-art.tsx).
+THUMBNAIL = os.path.join(SHOTS, "test-thumbnail.svg")
+if not os.path.exists(THUMBNAIL):
+    with open(THUMBNAIL, "w", encoding="utf-8") as handle:
+        handle.write(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450">'
+            '<rect width="800" height="450" fill="#0f6f71"/>'
+            '<circle cx="640" cy="120" r="90" fill="#eef7f7" fill-opacity="0.5"/></svg>'
+        )
+
 results: list[tuple[str, bool, str]] = []
 console_errors: list[str] = []
 
@@ -122,7 +133,7 @@ def main() -> int:
         page.fill("#subtitle", "Ship a real command line tool with tests and CI")
         page.fill("#outcomes", "Parse arguments safely\nWrite integration tests\nPublish to npm")
         page.fill("#tags", "nodejs, cli, testing")
-        page.set_input_files("input[name=thumbnail]", os.path.join(ROOT, "public", "uploads", "thumbnails", "sql-for-analysts.svg"))
+        page.set_input_files("input[name=thumbnail]", THUMBNAIL)
         page.check("input[name=featured]")
         page.click("button:has-text('Save settings')")
         settle(page, text="Course settings saved")

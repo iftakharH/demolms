@@ -123,15 +123,21 @@ Valid exports from `layout.tsx`, `page.tsx`, `route.ts`
 - `next/font/local` with `src` relative to the calling file:
   ```tsx
   import localFont from 'next/font/local';
-  const inter = localFont({
-    src: '../fonts/Inter-Variable.woff2',
+  const instrument = localFont({
+    src: '../fonts/InstrumentSans-Variable.woff2',
     display: 'swap',
-    weight: '100 900',
-    variable: '--font-inter',
+    weight: '400 700',
+    variable: '--font-instrument',
   });
   ```
+  Note the family name next/font generates comes from the **variable name** (`--font-instrument` ->
+  family `instrument`), and it also emits a metric-matched `"instrument Fallback"` next to it. The
+  runtime stack is therefore `var(--font-ui)` in `globals.css`, which starts with
+  `var(--font-instrument)` - do not hand-write `font-family: var(--font-sans)`, because `@theme inline`
+  does not emit that variable (see the comment in `globals.css`; the symptom is a silent fall back to
+  the system font).
 - `next/font/google` **downloads at build time** and is therefore not offline-safe. Use local files.
-  (This project self-hosts Inter in `src/fonts/`, fetched once by `scripts/fetch-fonts.mjs`.)
+  (This project self-hosts Instrument Sans in `src/fonts/`, fetched once by `scripts/fetch-fonts.mjs`.)
 
 ## 10. Navigation & errors
 
@@ -145,6 +151,18 @@ Valid exports from `layout.tsx`, `page.tsx`, `route.ts`
 
 ## 11. Other things that affect this build
 
+- **`instrumentation.ts`**: `src/instrumentation.ts` exports `register()`, which Next calls **once per
+  server process, before it handles requests**. It runs for every runtime, so node-only work must be
+  guarded with `process.env.NEXT_RUNTIME === 'nodejs'`. This app uses it to apply the schema, run
+  forward migrations and seed the demo data when the database is empty
+  (`src/db/ensure.ts` -> `ensureDatabase()`), which is what makes a disk-backed deployment self-seeding.
+  It is wrapped in try/catch on purpose: a read-only host should still boot and report errors per
+  request rather than refuse to start.
+- **Inline `<script>` in a layout**: put it in `<head>`, not in `<body>`. A script rendered as part of
+  a component tree in the body logs "Encountered a script tag while rendering React component" as soon
+  as that subtree re-renders on the client. The theme script (`src/app/layout.tsx`) lives in `<head>`
+  for this reason, and `<html>` carries `suppressHydrationWarning` because the script sets
+  `data-theme` before React hydrates.
 - **`next/image`**: `images.domains` deprecated; local images with query strings need
   `images.localPatterns`. This project serves `/uploads/*` files with plain `<img>` tags, which need no
   configuration.
