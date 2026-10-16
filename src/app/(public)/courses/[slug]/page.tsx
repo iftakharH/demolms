@@ -25,6 +25,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { renderMarkdown } from '@/lib/markdown';
 import { fileUrl } from '@/lib/file-url';
+import { CourseArt } from '@/components/course/course-art';
 import { formatDuration, formatPenceShort, formatTotalDuration, timeAgo } from '@/lib/format';
 import { APP_URL, DEV_TOOLS } from '@/lib/env';
 import { enrolFreeAction } from '@/lib/actions/enrolment-actions';
@@ -137,15 +138,15 @@ export default async function CoursePage({
       </nav>
 
       {query.welcome === '1' ? (
-        <div className="mt-5 flex items-center gap-2.5 rounded-2xl border border-emerald-200 bg-success-soft px-4 py-3 text-sm text-emerald-900">
-          <BadgeCheck className="size-5 shrink-0 text-emerald-600" aria-hidden />
+        <div className="mt-5 flex items-center gap-2.5 rounded-2xl border border-success-line bg-success-soft px-4 py-3 text-sm text-success-strong">
+          <BadgeCheck className="size-5 shrink-0 text-success" aria-hidden />
           You are enrolled. Open the course from <strong>My learning</strong> to start lesson one.
         </div>
       ) : null}
 
       {query.staff === '1' && staffViewer ? (
-        <div className="mt-5 flex items-center gap-2.5 rounded-2xl border border-amber-200 bg-warning-soft px-4 py-3 text-sm text-amber-900">
-          <BadgeCheck className="size-5 shrink-0 text-amber-600" aria-hidden />
+        <div className="mt-5 flex items-center gap-2.5 rounded-2xl border border-warning-line bg-warning-soft px-4 py-3 text-sm text-warning-strong">
+          <BadgeCheck className="size-5 shrink-0 text-warning" aria-hidden />
           Staff accounts cannot enrol in courses. Enter a learner&apos;s account from{' '}
           <Link href="/admin/users" className="font-semibold underline">
             Users
@@ -155,8 +156,8 @@ export default async function CoursePage({
       ) : null}
 
       {query.paused === '1' && !staffViewer ? (
-        <div className="mt-5 flex items-center gap-2.5 rounded-2xl border border-amber-200 bg-warning-soft px-4 py-3 text-sm text-amber-900">
-          <PauseCircle className="size-5 shrink-0 text-amber-600" aria-hidden />
+        <div className="mt-5 flex items-center gap-2.5 rounded-2xl border border-warning-line bg-warning-soft px-4 py-3 text-sm text-warning-strong">
+          <PauseCircle className="size-5 shrink-0 text-warning" aria-hidden />
           New enrolments are paused at the moment. Existing learners keep their access - check back
           soon.
         </div>
@@ -224,7 +225,7 @@ export default async function CoursePage({
               <ul className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
                 {course.outcomes.map((outcome) => (
                   <li key={outcome} className="flex gap-2.5 text-sm text-ink-700">
-                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" aria-hidden />
+                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" aria-hidden />
                     {outcome}
                   </li>
                 ))}
@@ -281,12 +282,14 @@ export default async function CoursePage({
               {course.thumbnailPath ? (
                 // eslint-disable-next-line @next/next/no-img-element -- local static asset
                 <img src={fileUrl(course.thumbnailPath)} alt="" className="aspect-[16/9] w-full object-cover" />
-              ) : null}
+              ) : (
+                <CourseArt title={course.title} slug={course.slug} className="aspect-[16/9] w-full" />
+              )}
               <div className="p-5">
                 {isEnrolled && summary ? (
                   /* ------------------------------------------------ ownership panel */
                   <div>
-                    <span className="badge bg-emerald-50 text-emerald-700">
+                    <span className="badge bg-success-soft text-success-strong">
                       <CheckCircle2 className="size-3.5" aria-hidden />
                       {summary.completedAt ? 'Completed' : 'You are enrolled'}
                     </span>
@@ -300,7 +303,7 @@ export default async function CoursePage({
                     <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-ink-200">
                       <div
                         className={`h-full rounded-full transition-[width] duration-500 ${
-                          summary.completedAt ? 'bg-emerald-500' : 'bg-brand-600'
+                          summary.completedAt ? 'bg-success' : 'bg-brand-600'
                         }`}
                         style={{ width: `${summary.percent}%` }}
                       />
@@ -394,7 +397,7 @@ export default async function CoursePage({
 
                     <div className="mt-5 space-y-2">
                       {paused ? (
-                        <p className="flex items-center gap-2.5 rounded-xl border border-amber-200 bg-warning-soft px-3.5 py-3 text-sm text-amber-900">
+                        <p className="flex items-center gap-2.5 rounded-xl border border-warning-line bg-warning-soft px-3.5 py-3 text-sm text-warning-strong">
                           <PauseCircle className="size-4 shrink-0" aria-hidden />
                           New enrolments are paused right now.
                         </p>
@@ -469,7 +472,7 @@ export default async function CoursePage({
                 </p>
                 <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-ink-200">
                   <div
-                    className={`h-full rounded-full ${summary.completedAt ? 'bg-emerald-500' : 'bg-brand-600'}`}
+                    className={`h-full rounded-full ${summary.completedAt ? 'bg-success' : 'bg-brand-600'}`}
                     style={{ width: `${summary.percent}%` }}
                   />
                 </div>
@@ -499,7 +502,7 @@ export default async function CoursePage({
                 </p>
               </div>
               {paused ? (
-                <p className="flex flex-1 items-center gap-2 text-xs text-amber-900">
+                <p className="flex flex-1 items-center gap-2 text-xs text-warning-strong">
                   <PauseCircle className="size-4 shrink-0" aria-hidden />
                   New enrolments are paused right now.
                 </p>

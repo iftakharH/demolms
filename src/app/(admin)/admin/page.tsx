@@ -74,7 +74,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<'/a
       </div>
 
       {query.staff === '1' ? (
-        <p className="rounded-xl border border-amber-200 bg-warning-soft px-4 py-3 text-sm text-amber-900">
+        <p className="rounded-xl border border-warning-line bg-warning-soft px-4 py-3 text-sm text-warning-strong">
           Staff accounts have no learner area. To see the platform as a learner, open someone from{' '}
           <Link href="/admin/users" className="font-semibold underline">
             Users
@@ -264,7 +264,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<'/a
             </div>
 
             {settings.enrolmentsPaused ? (
-              <p className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-3 text-xs text-amber-800">
+              <p className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-3 text-xs text-warning-strong">
                 <PauseCircle className="size-3.5 shrink-0" aria-hidden />
                 New enrolments are paused.
                 <Link href="/admin/settings" className="link">

@@ -1,2 +1,0 @@
-Starter module for the migration assignment.
-Placeholder text file standing in for a .zip in this demo.

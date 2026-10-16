@@ -58,7 +58,7 @@ export default async function OutboxEmailPage({ params }: PageProps<'/dev/outbox
         </dl>
       </div>
 
-      <div className="rounded-2xl border border-line bg-white shadow-sm">
+      <div className="rounded-2xl border border-line bg-surface shadow-sm">
         <div dangerouslySetInnerHTML={{ __html: email.body_html }} />
       </div>
 

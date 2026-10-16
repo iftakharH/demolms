@@ -53,8 +53,8 @@ export function FormMessage({ error, message }: { error?: string; message?: stri
       role={error ? 'alert' : 'status'}
       className={`rounded-xl px-3.5 py-2.5 text-sm ${
         error
-          ? 'border border-rose-200 bg-danger-soft text-danger'
-          : 'border border-emerald-200 bg-success-soft text-emerald-800'
+          ? 'border border-danger-line bg-danger-soft text-danger'
+          : 'border border-success-line bg-success-soft text-success-strong'
       }`}
     >
       {error ?? message}

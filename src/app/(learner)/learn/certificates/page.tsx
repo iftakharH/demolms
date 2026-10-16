@@ -113,13 +113,13 @@ export default async function CertificatesPage() {
                   </div>
 
                   {certificate.revokedAt ? (
-                    <p className="rounded-xl border border-rose-200 bg-danger-soft px-3.5 py-2.5 text-xs text-danger">
+                    <p className="rounded-xl border border-danger-line bg-danger-soft px-3.5 py-2.5 text-xs text-danger">
                       Revoked {formatDate(certificate.revokedAt)}
                       {certificate.revokeReason ? `: ${certificate.revokeReason}` : ''}
                     </p>
                   ) : (
                     <p className="flex items-center gap-2 rounded-xl border border-line bg-ink-50 px-3.5 py-2.5 text-xs text-ink-600">
-                      <ShieldCheck className="size-3.5 shrink-0 text-emerald-600" aria-hidden />
+                      <ShieldCheck className="size-3.5 shrink-0 text-success" aria-hidden />
                       Anyone with the link can verify it - no account needed.
                     </p>
                   )}

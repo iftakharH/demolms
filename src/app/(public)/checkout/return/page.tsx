@@ -57,10 +57,10 @@ export default async function CheckoutReturnPage({ searchParams }: PageProps<'/c
 
   return (
     <div className="mx-auto w-full max-w-xl px-4 py-14 sm:px-6">
-      <div className={`card p-6 ${paid ? 'border-emerald-200' : 'border-rose-200'}`}>
+      <div className={`card p-6 ${paid ? 'border-success-line' : 'border-danger-line'}`}>
         <div className="flex items-start gap-3">
           {paid ? (
-            <CheckCircle2 className="mt-0.5 size-7 shrink-0 text-emerald-600" aria-hidden />
+            <CheckCircle2 className="mt-0.5 size-7 shrink-0 text-success" aria-hidden />
           ) : (
             <XCircle className="mt-0.5 size-7 shrink-0 text-danger" aria-hidden />
           )}

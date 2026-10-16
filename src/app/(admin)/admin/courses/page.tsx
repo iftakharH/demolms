@@ -7,6 +7,7 @@ import { CourseStatusBadge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { formatPenceShort, formatTotalDuration, timeAgo } from '@/lib/format';
 import { fileUrl } from '@/lib/file-url';
+import { CourseArt } from '@/components/course/course-art';
 import {
   duplicateCourseAction,
   setCourseStatusAction,
@@ -77,12 +78,12 @@ export default async function AdminCoursesPage({ searchParams }: PageProps<'/adm
       </div>
 
       {params.deleted === '1' ? (
-        <p className="rounded-xl border border-emerald-200 bg-success-soft px-4 py-3 text-sm text-emerald-800">
+        <p className="rounded-xl border border-success-line bg-success-soft px-4 py-3 text-sm text-success-strong">
           Draft course deleted.
         </p>
       ) : null}
       {typeof params.error === 'string' ? (
-        <p className="rounded-xl border border-rose-200 bg-danger-soft px-4 py-3 text-sm text-danger">
+        <p className="rounded-xl border border-danger-line bg-danger-soft px-4 py-3 text-sm text-danger">
           {params.error}
         </p>
       ) : null}
@@ -180,7 +181,9 @@ export default async function AdminCoursesPage({ searchParams }: PageProps<'/adm
                           {course.thumbnailPath ? (
                             // eslint-disable-next-line @next/next/no-img-element -- local static asset
                             <img src={fileUrl(course.thumbnailPath)} alt="" className="h-full w-full object-cover" />
-                          ) : null}
+                          ) : (
+                            <CourseArt title={course.title} slug={course.slug} className="h-full w-full" />
+                          )}
                         </span>
                         <span className="min-w-0">
                           <Link

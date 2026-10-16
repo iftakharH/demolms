@@ -32,12 +32,12 @@ const ToastContext = createContext<ToastApi | null>(null);
 
 const VARIANT_STYLES: Record<ToastVariant, { wrap: string; icon: ReactNode }> = {
   success: {
-    wrap: 'border-emerald-200 bg-emerald-50 text-emerald-900',
-    icon: <CheckCircle2 className="size-5 shrink-0 text-emerald-600" aria-hidden />,
+    wrap: 'border-success-line bg-success-soft text-success-strong',
+    icon: <CheckCircle2 className="size-5 shrink-0 text-success" aria-hidden />,
   },
   error: {
-    wrap: 'border-rose-200 bg-rose-50 text-rose-900',
-    icon: <AlertCircle className="size-5 shrink-0 text-rose-600" aria-hidden />,
+    wrap: 'border-danger-line bg-danger-soft text-danger-strong',
+    icon: <AlertCircle className="size-5 shrink-0 text-danger" aria-hidden />,
   },
   info: {
     wrap: 'border-brand-200 bg-brand-50 text-brand-950',

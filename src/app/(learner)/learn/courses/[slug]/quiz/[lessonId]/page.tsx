@@ -85,7 +85,7 @@ export default async function QuizPage({
             <div className="flex items-start gap-3">
               {viewing.status === 'graded' ? (
                 viewing.passed ? (
-                  <CheckCircle2 className="mt-0.5 size-7 shrink-0 text-emerald-600" aria-hidden />
+                  <CheckCircle2 className="mt-0.5 size-7 shrink-0 text-success" aria-hidden />
                 ) : (
                   <XCircle className="mt-0.5 size-7 shrink-0 text-danger" aria-hidden />
                 )
@@ -162,7 +162,7 @@ export default async function QuizPage({
                         key={optionIndex}
                         className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 ${
                           correct
-                            ? 'bg-success-soft text-emerald-900'
+                            ? 'bg-success-soft text-success-strong'
                             : chosen
                               ? 'bg-danger-soft text-danger'
                               : 'text-ink-600'

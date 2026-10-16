@@ -25,8 +25,8 @@ export default async function VerifyEmailPage({ searchParams }: PageProps<'/veri
   if (params.verified === '1') {
     return (
       <AuthCard title="Email verified" subtitle="That address is now confirmed on your account.">
-        <div className="flex items-start gap-3 rounded-2xl bg-success-soft p-4 text-sm text-emerald-900">
-          <BadgeCheck className="mt-0.5 size-5 shrink-0 text-emerald-600" aria-hidden />
+        <div className="flex items-start gap-3 rounded-2xl bg-success-soft p-4 text-sm text-success-strong">
+          <BadgeCheck className="mt-0.5 size-5 shrink-0 text-success" aria-hidden />
           <p>Thanks - you are all set. Head to your dashboard to pick up where you left off.</p>
         </div>
         <div className="mt-5 flex flex-wrap gap-2">
@@ -72,7 +72,7 @@ export default async function VerifyEmailPage({ searchParams }: PageProps<'/veri
       title="This link has expired"
       subtitle="Verification links last 24 hours and can only be used once."
     >
-      <div className="flex items-start gap-3 rounded-2xl bg-warning-soft p-4 text-sm text-amber-900">
+      <div className="flex items-start gap-3 rounded-2xl bg-warning-soft p-4 text-sm text-warning-strong">
         <MailWarning className="mt-0.5 size-5 shrink-0 text-warning" aria-hidden />
         <p>Request a fresh link below and open it from the email outbox.</p>
       </div>

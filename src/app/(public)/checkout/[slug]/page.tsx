@@ -6,6 +6,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { evaluateCoupon } from '@/lib/coupons';
 import { queryOne } from '@/lib/db';
 import { fileUrl } from '@/lib/file-url';
+import { CourseArt } from '@/components/course/course-art';
 import { formatPence } from '@/lib/format';
 import { startCheckoutAction } from '@/lib/actions/payment-actions';
 import { SubmitButton } from '@/components/ui/submit-button';
@@ -73,9 +74,9 @@ export default async function CheckoutPage({ params, searchParams }: PageProps<'
       </p>
 
       {alreadyEnrolled ? (
-        <div className="card mt-6 flex flex-wrap items-center justify-between gap-4 border-emerald-200 bg-success-soft p-5">
-          <p className="flex items-center gap-2 text-sm text-emerald-900">
-            <BadgeCheck className="size-5 text-emerald-600" aria-hidden />
+        <div className="card mt-6 flex flex-wrap items-center justify-between gap-4 border-success-line bg-success-soft p-5">
+          <p className="flex items-center gap-2 text-sm text-success-strong">
+            <BadgeCheck className="size-5 text-success" aria-hidden />
             You already have access to this course.
           </p>
           <Link href={`/learn/courses/${course.slug}`} className="btn-primary btn-sm">
@@ -94,7 +95,9 @@ export default async function CheckoutPage({ params, searchParams }: PageProps<'
                 {course.thumbnail_path ? (
                   // eslint-disable-next-line @next/next/no-img-element -- local static asset
                   <img src={fileUrl(course.thumbnail_path)} alt="" className="h-full w-full object-cover" />
-                ) : null}
+                ) : (
+                  <CourseArt title={course.title} slug={course.slug} className="h-full w-full" />
+                )}
               </span>
               <div className="min-w-0">
                 <p className="font-medium text-ink-900">{course.title}</p>
@@ -134,15 +137,15 @@ export default async function CheckoutPage({ params, searchParams }: PageProps<'
               <p
                 className={`mt-3 rounded-xl px-3.5 py-2.5 text-sm ${
                   couponCheck.ok
-                    ? 'border border-emerald-200 bg-success-soft text-emerald-800'
-                    : 'border border-rose-200 bg-danger-soft text-danger'
+                    ? 'border border-success-line bg-success-soft text-success-strong'
+                    : 'border border-danger-line bg-danger-soft text-danger'
                 }`}
               >
                 {couponCheck.message}
               </p>
             ) : null}
             {typeof query.error === 'string' ? (
-              <p className="mt-3 rounded-xl border border-rose-200 bg-danger-soft px-3.5 py-2.5 text-sm text-danger">
+              <p className="mt-3 rounded-xl border border-danger-line bg-danger-soft px-3.5 py-2.5 text-sm text-danger">
                 {query.error}
               </p>
             ) : null}
@@ -166,7 +169,7 @@ export default async function CheckoutPage({ params, searchParams }: PageProps<'
                 <dd className="text-ink-800">{formatPence(course.price_pence)}</dd>
               </div>
               {discountPence > 0 ? (
-                <div className="flex justify-between text-emerald-700">
+                <div className="flex justify-between text-success-strong">
                   <dt>Discount {couponCheck?.coupon ? `(${couponCheck.coupon.code})` : ''}</dt>
                   <dd>-{formatPence(discountPence)}</dd>
                 </div>

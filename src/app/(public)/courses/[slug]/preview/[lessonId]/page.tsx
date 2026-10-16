@@ -53,7 +53,7 @@ export default async function PreviewLessonPage({
       <h1 className="mt-3 text-2xl font-semibold tracking-tight text-ink-900">{lesson.title}</h1>
 
       {lesson.type === 'video' && lesson.videoPath ? (
-        <div className="mt-6 overflow-hidden rounded-2xl border border-line bg-ink-950">
+        <div className="mt-6 overflow-hidden rounded-2xl border border-line bg-scrim">
           <video
             className="aspect-video w-full"
             controls

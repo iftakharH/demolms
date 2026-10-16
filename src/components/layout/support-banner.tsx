@@ -13,8 +13,8 @@ export async function SupportBanner() {
 
   return (
     <div className="no-print fixed right-4 bottom-24 left-4 z-50 sm:left-auto sm:max-w-md lg:right-6 lg:bottom-6">
-      <div className="glass-panel flex items-center gap-3 rounded-2xl px-4 py-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+      <div className="popover flex items-center gap-3 rounded-2xl px-4 py-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-warning-soft text-warning-strong">
           <LifeBuoy className="size-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">

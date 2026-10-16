@@ -144,12 +144,12 @@ export function initials(name: string): string {
 /** Deterministic avatar tint from a name, so avatars look intentional. */
 export function avatarTint(name: string): string {
   const palette = [
-    'bg-brand-100 text-brand-800',
-    'bg-emerald-100 text-emerald-800',
-    'bg-amber-100 text-amber-900',
-    'bg-sky-100 text-sky-900',
-    'bg-rose-100 text-rose-900',
-    'bg-indigo-100 text-indigo-900',
+    'bg-ink-100 text-ink-700',
+    'bg-brand-100 text-brand-900',
+    'bg-ink-200 text-ink-800',
+    'bg-info-soft text-info-strong',
+    'bg-warning-soft text-warning-strong',
+    'bg-success-soft text-success-strong',
   ];
   let sum = 0;
   for (const char of name) sum += char.charCodeAt(0);

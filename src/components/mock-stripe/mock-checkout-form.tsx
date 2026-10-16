@@ -48,12 +48,12 @@ export function MockCheckoutForm({ order }: { order: OrderView }) {
       <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
         <div
           className={`card p-6 ${
-            result.status === 'paid' ? 'border-emerald-200 bg-success-soft' : 'border-rose-200 bg-danger-soft'
+            result.status === 'paid' ? 'border-success-line bg-success-soft' : 'border-danger-line bg-danger-soft'
           }`}
         >
           <div className="flex items-start gap-3">
             {result.status === 'paid' ? (
-              <CheckCircle2 className="mt-0.5 size-6 shrink-0 text-emerald-600" aria-hidden />
+              <CheckCircle2 className="mt-0.5 size-6 shrink-0 text-success" aria-hidden />
             ) : (
               <XCircle className="mt-0.5 size-6 shrink-0 text-danger" aria-hidden />
             )}
@@ -115,7 +115,7 @@ export function MockCheckoutForm({ order }: { order: OrderView }) {
 
         {result?.status === 'declined' ? (
           <>
-            <p className="mt-4 flex items-start gap-2 rounded-xl border border-rose-200 bg-danger-soft px-3.5 py-2.5 text-sm text-danger">
+            <p className="mt-4 flex items-start gap-2 rounded-xl border border-danger-line bg-danger-soft px-3.5 py-2.5 text-sm text-danger">
               <XCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
               {result.message}
             </p>
@@ -263,15 +263,15 @@ export function MockCheckoutForm({ order }: { order: OrderView }) {
           </p>
         </div>
 
-        <div className="card border-warning/40 bg-warning-soft p-4 text-xs text-amber-900">
+        <div className="card border-warning/40 bg-warning-soft p-4 text-xs text-warning-strong">
           <p className="flex items-center gap-1.5 font-semibold">
             <AlertTriangle className="size-3.5" aria-hidden />
             Demo only
           </p>
           <p className="mt-1">
             No payment network is involved. Expected test numbers:{' '}
-            <code className="rounded bg-white/70 px-1">{TEST_CARDS.success}</code>,{' '}
-            <code className="rounded bg-white/70 px-1">{TEST_CARDS.decline}</code>.
+            <code className="rounded bg-surface/70 px-1">{TEST_CARDS.success}</code>,{' '}
+            <code className="rounded bg-surface/70 px-1">{TEST_CARDS.decline}</code>.
           </p>
         </div>
       </aside>
@@ -294,13 +294,13 @@ function DeliveryLog({
 }) {
   const ok = status >= 200 && status < 300;
   return (
-    <div className={`card mt-4 p-4 ${tone === 'danger' ? 'border-rose-200' : ''}`}>
+    <div className={`card mt-4 p-4 ${tone === 'danger' ? 'border-danger-line' : ''}`}>
       <p className="flex items-center gap-2 text-sm font-medium text-ink-800">
-        <Send className={`size-4 ${ok ? 'text-emerald-600' : 'text-danger'}`} aria-hidden />
+        <Send className={`size-4 ${ok ? 'text-success' : 'text-danger'}`} aria-hidden />
         {label}
       </p>
       <p className="mt-2 text-xs text-ink-500">
-        HTTP <span className={`font-mono font-semibold ${ok ? 'text-emerald-700' : 'text-danger'}`}>{status}</span>
+        HTTP <span className={`font-mono font-semibold ${ok ? 'text-success-strong' : 'text-danger'}`}>{status}</span>
         {eventId ? (
           <>
             {' '}
@@ -308,7 +308,7 @@ function DeliveryLog({
           </>
         ) : null}
       </p>
-      <pre className="mt-2 overflow-x-auto rounded-xl bg-ink-950 p-3 text-[0.6875rem] leading-relaxed text-ink-100">
+      <pre className="mt-2 overflow-x-auto rounded-xl bg-scrim p-3 text-[0.6875rem] leading-relaxed text-ink-100">
         {pretty(body)}
       </pre>
     </div>

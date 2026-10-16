@@ -6,16 +6,19 @@ import { useEffect, useRef, type ReactNode } from 'react';
 const CONDENSE_DISTANCE = 140;
 
 /**
- * The frosted chrome every page's navigation sits in.
+ * The navigation chrome every page sits in.
  *
- * As the page scrolls the bar floats clear of the top edge, gains its glass ring and
- * shadow, and - on desktop - narrows to the width of its own content instead of
- * shrinking vertically. The scroll position is written straight to CSS variables
- * (`--condense`, `--progress`), and the content width into `--nav-fit`, so scrolling
- * never re-renders React. The header reserves 4.5rem of space either way, so the bar
- * can float without covering the page below it.
+ * Quiet by design (DESIGN.md): a hairline bar that condenses horizontally on
+ * desktop as the page scrolls - full bleed at the top, then centred at the width
+ * of its own content - with a one-pixel accent meter tracking read progress.
+ * Height never changes, and the header reserves 4.5rem, so the bar cannot cover
+ * the page below it.
+ *
+ * The scroll position is written straight to CSS variables (`--condense`,
+ * `--progress`) and the content width into `--nav-fit`, so scrolling never
+ * re-renders React.
  */
-export function GlassHeader({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
+export function NavShell({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
   const barRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,7 +83,7 @@ export function GlassHeader({ children, wide = false }: { children: ReactNode; w
       observer.observe(row);
       for (const child of Array.from(row.children)) observer.observe(child);
     }
-    // the self-hosted Inter font swaps in after first paint and changes the widths
+    // the self-hosted Instrument Sans swaps in after first paint and changes widths
     document.fonts?.ready.then(onResize).catch(() => undefined);
 
     return () => {
@@ -95,18 +98,7 @@ export function GlassHeader({ children, wide = false }: { children: ReactNode; w
     <header className="no-print sticky top-0 z-30">
       {/* Reserved height: the bar floats inside this box, so the page never jumps. */}
       <div className="relative h-[4.5rem]">
-        <div className="glass-nav" ref={barRef}>
-          {/* The frost lives in its own layer: a filtered parent would stop the
-              menus that drop out of the bar from blurring the page behind them. */}
-          <span
-            className="absolute inset-0 rounded-[inherit] backdrop-blur-xl backdrop-saturate-150"
-            aria-hidden
-          />
-          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]" aria-hidden>
-            <span className="nav-aurora -top-24 -left-16 size-56 bg-brand-400/50" />
-            <span className="nav-aurora -top-28 right-2 size-52 bg-info/30 [animation-delay:-7s]" />
-          </div>
-
+        <div className="nav-shell" ref={barRef}>
           <div
             data-nav-row
             className={`relative mx-auto flex h-full w-full items-center justify-between gap-4 px-4 sm:px-6 ${

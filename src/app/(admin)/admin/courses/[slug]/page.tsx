@@ -164,15 +164,15 @@ export default async function CourseBuilderPage({
       </div>
 
       {error ? (
-        <p className="rounded-xl border border-rose-200 bg-danger-soft px-4 py-3 text-sm text-danger">{error}</p>
+        <p className="rounded-xl border border-danger-line bg-danger-soft px-4 py-3 text-sm text-danger">{error}</p>
       ) : null}
       {saved && !error ? (
-        <p className="rounded-xl border border-emerald-200 bg-success-soft px-4 py-3 text-sm text-emerald-800">
+        <p className="rounded-xl border border-success-line bg-success-soft px-4 py-3 text-sm text-success-strong">
           Saved.
         </p>
       ) : null}
       {copied && !error ? (
-        <p className="rounded-xl border border-emerald-200 bg-success-soft px-4 py-3 text-sm text-emerald-800">
+        <p className="rounded-xl border border-success-line bg-success-soft px-4 py-3 text-sm text-success-strong">
           Duplicated as a fresh draft - edit the copy freely, the original is untouched.
         </p>
       ) : null}

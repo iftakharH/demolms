@@ -9,6 +9,7 @@ import { SortSelect } from '@/components/ui/sort-select';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { fileUrl } from '@/lib/file-url';
+import { CourseArt } from '@/components/course/course-art';
 import { formatDuration, timeAgo } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -175,13 +176,15 @@ export default async function MyLearningPage({ searchParams }: PageProps<'/learn
                     {course.thumbnailPath ? (
                       // eslint-disable-next-line @next/next/no-img-element -- local static asset
                       <img src={fileUrl(course.thumbnailPath)} alt="" className="h-full w-full object-cover" />
-                    ) : null}
+                    ) : (
+                      <CourseArt title={course.title} slug={course.slug} className="h-full w-full" />
+                    )}
                   </Link>
                   <div className="absolute right-3 bottom-3 rounded-full bg-surface/95 p-1 shadow-sm">
                     <ProgressRing percent={course.percent} size={46} stroke={4} />
                   </div>
                   {completed ? (
-                    <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[0.6875rem] font-semibold text-white shadow-sm">
+                    <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-success px-2.5 py-1 text-[0.6875rem] font-semibold text-white shadow-sm">
                       <Check className="size-3" aria-hidden />
                       Completed
                     </span>

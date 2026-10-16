@@ -113,10 +113,10 @@ export default async function ReceiptPage({ params }: PageProps<'/learn/orders/[
               </tr>
               {order.discount_pence > 0 ? (
                 <tr>
-                  <td className="text-emerald-700">
+                  <td className="text-success-strong">
                     Discount{order.coupon_code ? ` (${order.coupon_code})` : ''}
                   </td>
-                  <td className="text-right text-emerald-700">-{formatPence(order.discount_pence)}</td>
+                  <td className="text-right text-success-strong">-{formatPence(order.discount_pence)}</td>
                 </tr>
               ) : null}
               <tr>

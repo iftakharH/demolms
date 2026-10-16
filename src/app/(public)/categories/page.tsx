@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ArrowRight, Layers } from 'lucide-react';
 import { catalog, categoriesWithCounts } from '@/lib/queries/catalog';
 import { fileUrl } from '@/lib/file-url';
+import { CourseArt } from '@/components/course/course-art';
 import { formatPenceShort } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -58,7 +59,9 @@ export default function CategoriesPage() {
                         {course.thumbnailPath ? (
                           // eslint-disable-next-line @next/next/no-img-element -- local static asset
                           <img src={fileUrl(course.thumbnailPath)} alt="" className="h-full w-full object-cover" />
-                        ) : null}
+                        ) : (
+                          <CourseArt title={course.title} slug={course.slug} className="h-full w-full" />
+                        )}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium text-ink-800">{course.title}</span>

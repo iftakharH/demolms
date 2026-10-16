@@ -23,6 +23,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { formatDate, formatDuration, formatPercent, timeAgo } from '@/lib/format';
 import { fileUrl } from '@/lib/file-url';
+import { CourseArt } from '@/components/course/course-art';
 import { recentNotifications, unreadCount } from '@/lib/notify';
 import { FlashToast } from '@/components/ui/flash-toast';
 
@@ -114,7 +115,7 @@ export default async function DashboardPage({
       </div>
 
       {!user.emailVerified ? (
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-warning-soft px-4 py-3 text-sm text-amber-900">
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-warning-line bg-warning-soft px-4 py-3 text-sm text-warning-strong">
           <MailWarning className="size-5 shrink-0 text-warning" aria-hidden />
           <p className="flex-1">
             Verify your email address to unlock everything. The link is in the{' '}
@@ -123,7 +124,7 @@ export default async function DashboardPage({
             </Link>
             .
           </p>
-          <Link href="/verify-email/notice" className="btn-secondary btn-sm border-amber-300 bg-white">
+          <Link href="/verify-email/notice" className="btn-secondary btn-sm border-warning-line bg-surface">
             Verify now
           </Link>
         </div>
@@ -142,9 +143,9 @@ export default async function DashboardPage({
                   className="h-40 w-full object-cover sm:h-48"
                 />
               ) : (
-                <div className="h-40 w-full bg-ink-100 sm:h-48" />
+                <CourseArt title={active.title} slug={active.slug} className="h-40 w-full sm:h-48" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-ink-950/85 via-ink-950/35 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-scrim/85 via-scrim/35 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-5">
                 <p className="text-xs font-semibold tracking-wide text-brand-200 uppercase">
                   {active.percent > 0 ? 'Continue watching' : 'Start learning'}
@@ -404,7 +405,7 @@ export default async function DashboardPage({
                   </Link>
                   <span className="shrink-0 text-xs text-ink-500">
                     {course.percent >= 100 ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-700">
+                      <span className="inline-flex items-center gap-1 text-success-strong">
                         <Check className="size-3.5" aria-hidden />
                         Complete
                       </span>

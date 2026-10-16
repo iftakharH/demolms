@@ -14,7 +14,7 @@ const TABS = [
 ] as const;
 
 /**
- * Mobile bottom tab bar for the learner area: a floating frosted dock with one
+ * Mobile bottom tab bar for the learner area: a floating dock with one
  * highlight that slides sideways to the active tab. Five destinations keep it in
  * thumb reach (notifications stay on the header bell, which is visible at every size).
  */
@@ -68,7 +68,7 @@ export function LearnerTabBar() {
       className="no-print fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 lg:hidden"
       aria-label="Learner sections"
     >
-      <div className="glass-panel mx-auto max-w-lg rounded-2xl p-1">
+      <div className="popover mx-auto max-w-lg rounded-2xl p-1">
         <div className="relative">
           <span
             className={`dock-pill ${pill ? 'opacity-100' : 'opacity-0'}`}

@@ -17,8 +17,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     <div className="flex min-h-full flex-col">
       <SiteHeader wide showAnnouncement={false} />
       {user.role === 'auditor' ? (
-        <div className="no-print border-b border-amber-200 bg-warning-soft">
-          <div className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-amber-900 sm:px-6 lg:px-8 2xl:px-10">
+        <div className="no-print border-b border-warning-line bg-warning-soft">
+          <div className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-warning-strong sm:px-6 lg:px-8 2xl:px-10">
             <Eye className="size-4 shrink-0" aria-hidden />
             <p>
               You are signed in as an <strong>auditor</strong>: the whole admin area is visible but

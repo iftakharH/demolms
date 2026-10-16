@@ -41,7 +41,7 @@ export default async function AdminSettingsPage({ searchParams }: PageProps<'/ad
       </div>
 
       {query.saved === '1' ? (
-        <p className="rounded-xl border border-emerald-200 bg-success-soft px-4 py-3 text-sm text-emerald-800">
+        <p className="rounded-xl border border-success-line bg-success-soft px-4 py-3 text-sm text-success-strong">
           Saved.{' '}
           {typeof query.moved === 'string'
             ? `${query.moved} course${query.moved === '1' ? '' : 's'} moved to uncategorised.`
@@ -49,7 +49,7 @@ export default async function AdminSettingsPage({ searchParams }: PageProps<'/ad
         </p>
       ) : null}
       {typeof query.error === 'string' ? (
-        <p className="rounded-xl border border-rose-200 bg-danger-soft px-4 py-3 text-sm text-danger">
+        <p className="rounded-xl border border-danger-line bg-danger-soft px-4 py-3 text-sm text-danger">
           {query.error}
         </p>
       ) : null}

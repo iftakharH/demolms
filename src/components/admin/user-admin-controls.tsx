@@ -38,12 +38,12 @@ export function UserAdminControls({
         <input type="hidden" name="user_id" value={userId} />
 
         {roleState.error ? (
-          <p className="rounded-xl border border-rose-200 bg-danger-soft px-3.5 py-2.5 text-sm text-danger">
+          <p className="rounded-xl border border-danger-line bg-danger-soft px-3.5 py-2.5 text-sm text-danger">
             {roleState.error}
           </p>
         ) : null}
         {roleState.ok ? (
-          <p className="rounded-xl border border-emerald-200 bg-success-soft px-3.5 py-2.5 text-sm text-emerald-800">
+          <p className="rounded-xl border border-success-line bg-success-soft px-3.5 py-2.5 text-sm text-success-strong">
             {roleState.message}
           </p>
         ) : null}
@@ -80,12 +80,12 @@ export function UserAdminControls({
           <input type="hidden" name="active" value={isActive ? '0' : '1'} />
 
           {activeState.error ? (
-            <p className="rounded-xl border border-rose-200 bg-danger-soft px-3.5 py-2.5 text-sm text-danger">
+            <p className="rounded-xl border border-danger-line bg-danger-soft px-3.5 py-2.5 text-sm text-danger">
               {activeState.error}
             </p>
           ) : null}
           {activeState.ok ? (
-            <p className="rounded-xl border border-emerald-200 bg-success-soft px-3.5 py-2.5 text-sm text-emerald-800">
+            <p className="rounded-xl border border-success-line bg-success-soft px-3.5 py-2.5 text-sm text-success-strong">
               {activeState.message}
             </p>
           ) : null}

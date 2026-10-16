@@ -1,16 +1,11 @@
 import Link from 'next/link';
 import { Check, Clock, PlayCircle, SquarePen, Star, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { CourseArt } from './course-art';
 import { fileUrl } from '@/lib/file-url';
 import { formatPenceShort, formatTotalDuration } from '@/lib/format';
 import type { CourseCard as CourseCardData } from '@/lib/queries/catalog';
 import type { EnrolledCourseProgress } from '@/lib/progress';
-
-const LEVEL_TONE = {
-  beginner: 'success',
-  intermediate: 'brand',
-  advanced: 'warning',
-} as const;
 
 const LEVEL_LABEL = {
   beginner: 'Beginner',
@@ -50,17 +45,23 @@ export function CourseCard({
             loading={priority ? 'eager' : 'lazy'}
             className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
           />
-        ) : null}
+        ) : (
+          <CourseArt
+            title={course.title}
+            slug={course.slug}
+            className="h-full w-full transition duration-300 group-hover:scale-[1.02]"
+          />
+        )}
 
         <span className="absolute top-3 left-3 flex flex-wrap gap-1.5">
           {owned ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[0.6875rem] font-semibold text-white shadow-sm">
+            <span className="inline-flex items-center gap-1 rounded-full bg-success px-2.5 py-1 text-[0.6875rem] font-semibold text-white shadow-sm">
               <Check className="size-3" aria-hidden />
               {enrolment?.completed ? 'Completed' : 'Enrolled'}
             </span>
           ) : null}
           {course.featured && !owned ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[0.6875rem] font-semibold text-brand-800 shadow-sm">
+            <span className="inline-flex items-center gap-1 rounded-full bg-surface/95 px-2.5 py-1 text-[0.6875rem] font-semibold text-brand-800 shadow-sm">
               <Star className="size-3 fill-brand-500 text-brand-500" aria-hidden />
               Featured
             </span>
@@ -83,7 +84,7 @@ export function CourseCard({
           <span className="shrink-0" aria-hidden>
             ·
           </span>
-          <Badge tone={LEVEL_TONE[course.level]} className="shrink-0">
+          <Badge tone="neutral" className="shrink-0">
             {LEVEL_LABEL[course.level]}
           </Badge>
         </div>
@@ -128,7 +129,7 @@ export function CourseCard({
               <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-ink-200">
                 <div
                   className={`h-full rounded-full transition-[width] duration-500 ${
-                    enrolment.completed ? 'bg-emerald-500' : 'bg-brand-600'
+                    enrolment.completed ? 'bg-success' : 'bg-brand-600'
                   }`}
                   style={{ width: `${enrolment.percent}%` }}
                 />

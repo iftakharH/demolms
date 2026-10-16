@@ -67,8 +67,8 @@ export default async function AdminOrderDetailPage({ params }: PageProps<'/admin
                 </tr>
                 {order.discountPence > 0 ? (
                   <tr>
-                    <td className="text-emerald-700">Discount {order.couponCode}</td>
-                    <td className="text-right text-emerald-700">-{formatPence(order.discountPence)}</td>
+                    <td className="text-success-strong">Discount {order.couponCode}</td>
+                    <td className="text-right text-success-strong">-{formatPence(order.discountPence)}</td>
                   </tr>
                 ) : null}
                 <tr>

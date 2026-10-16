@@ -52,10 +52,10 @@ export default async function LessonEditorPage({
       </div>
 
       {error ? (
-        <p className="rounded-xl border border-rose-200 bg-danger-soft px-4 py-3 text-sm text-danger">{error}</p>
+        <p className="rounded-xl border border-danger-line bg-danger-soft px-4 py-3 text-sm text-danger">{error}</p>
       ) : null}
       {saved && !error ? (
-        <p className="rounded-xl border border-emerald-200 bg-success-soft px-4 py-3 text-sm text-emerald-800">
+        <p className="rounded-xl border border-success-line bg-success-soft px-4 py-3 text-sm text-success-strong">
           Saved.
         </p>
       ) : null}
@@ -112,7 +112,7 @@ export default async function LessonEditorPage({
               ) : null}
             </video>
           ) : (
-            <p className="rounded-xl border border-dashed border-warning bg-warning-soft px-4 py-3 text-sm text-amber-900">
+            <p className="rounded-xl border border-dashed border-warning bg-warning-soft px-4 py-3 text-sm text-warning-strong">
               No video uploaded yet. Upload one with the form above (choose the file, then Save lesson).
             </p>
           )}

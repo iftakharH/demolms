@@ -62,7 +62,7 @@ export default async function VerifyPage({ params }: PageProps<'/verify/[certifi
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-16 sm:px-6">
       <div
-        className={`card overflow-hidden ${revoked ? 'border-rose-200' : 'border-emerald-200'}`}
+        className={`card overflow-hidden ${revoked ? 'border-danger-line' : 'border-success-line'}`}
       >
         <div
           className={`flex items-center gap-3 px-6 py-5 ${
@@ -72,7 +72,7 @@ export default async function VerifyPage({ params }: PageProps<'/verify/[certifi
           {revoked ? (
             <ShieldX className="size-8 shrink-0 text-danger" aria-hidden />
           ) : (
-            <ShieldCheck className="size-8 shrink-0 text-emerald-600" aria-hidden />
+            <ShieldCheck className="size-8 shrink-0 text-success" aria-hidden />
           )}
           <div>
             <p className="text-xs font-semibold tracking-wide text-ink-600 uppercase">
@@ -114,7 +114,7 @@ export default async function VerifyPage({ params }: PageProps<'/verify/[certifi
         </dl>
 
         {revoked ? (
-          <div className="border-t border-rose-200 bg-danger-soft px-6 py-4">
+          <div className="border-t border-danger-line bg-danger-soft px-6 py-4">
             <p className="text-sm text-danger">
               Revoked {certificate.revokedAt ? formatDate(certificate.revokedAt) : ''}
               {certificate.revokeReason ? ` - ${certificate.revokeReason}` : ''}

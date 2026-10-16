@@ -64,7 +64,7 @@ export function NotificationBell({
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="relative rounded-xl border border-white/70 bg-white/60 p-2 text-ink-600 backdrop-blur-md transition duration-200 hover:border-brand-200 hover:bg-white/90 hover:text-ink-900 active:scale-95"
+        className="relative rounded-xl border border-line bg-surface p-2 text-ink-600 transition duration-[130ms] hover:border-ink-300 hover:text-ink-900"
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={unread > 0 ? `Notifications (${unread} unread)` : 'Notifications'}
@@ -80,7 +80,7 @@ export function NotificationBell({
       {open ? (
         <div
           role="menu"
-          className="glass-panel animate-drop fixed inset-x-3 top-[4.4rem] z-40 overflow-hidden rounded-2xl sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-80"
+          className="popover animate-drop fixed inset-x-3 top-[4.4rem] z-40 overflow-hidden rounded-2xl sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-80"
         >
           <div className="flex items-center justify-between border-b border-line px-4 py-3">
             <p className="text-sm font-semibold text-ink-900">Notifications</p>

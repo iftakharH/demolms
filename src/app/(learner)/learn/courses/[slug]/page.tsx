@@ -190,11 +190,11 @@ export default async function CoursePlayerPage({
       </div>
 
       {routeParams.finished === '1' ? (
-        <div className="rounded-2xl border border-emerald-200 bg-success-soft px-5 py-4">
-          <p className="text-sm font-semibold text-emerald-900">
+        <div className="rounded-2xl border border-success-line bg-success-soft px-5 py-4">
+          <p className="text-sm font-semibold text-success-strong">
             {completion.complete ? `You finished ${course.title}.` : 'That was the last lesson - nice work.'}
           </p>
-          <p className="mt-1 text-sm text-emerald-900/80">
+          <p className="mt-1 text-sm text-success-strong/80">
             {completion.complete && course.certificate_enabled
               ? 'Your certificate is ready.'
               : completion.complete
@@ -241,7 +241,7 @@ export default async function CoursePlayerPage({
                     upNext={upNext}
                   />
                 ) : (
-                  <p className="rounded-xl border border-dashed border-warning bg-warning-soft px-4 py-3 text-sm text-amber-900">
+                  <p className="rounded-xl border border-dashed border-warning bg-warning-soft px-4 py-3 text-sm text-warning-strong">
                     No video has been uploaded for this lesson yet.
                   </p>
                 )

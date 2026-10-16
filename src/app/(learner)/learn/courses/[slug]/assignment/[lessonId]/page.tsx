@@ -63,8 +63,8 @@ export default async function AssignmentPage({
       </div>
 
       {query.submitted === '1' ? (
-        <p className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-success-soft px-4 py-3 text-sm text-emerald-900">
-          <CheckCircle2 className="size-5 shrink-0 text-emerald-600" aria-hidden />
+        <p className="flex items-center gap-2 rounded-xl border border-success-line bg-success-soft px-4 py-3 text-sm text-success-strong">
+          <CheckCircle2 className="size-5 shrink-0 text-success" aria-hidden />
           Submitted. Your instructor will grade it and you will get an email with the feedback.
         </p>
       ) : null}
@@ -98,11 +98,11 @@ export default async function AssignmentPage({
           </div>
 
           {latest.status === 'graded' ? (
-            <div className="mt-4 rounded-xl border border-emerald-200 bg-success-soft p-4">
-              <p className="text-sm font-semibold text-emerald-900">
+            <div className="mt-4 rounded-xl border border-success-line bg-success-soft p-4">
+              <p className="text-sm font-semibold text-success-strong">
                 Score: {latest.score} / {latest.maxScore}
               </p>
-              <p className="mt-1.5 text-sm whitespace-pre-wrap text-emerald-900/90">{latest.feedback}</p>
+              <p className="mt-1.5 text-sm whitespace-pre-wrap text-success-strong/90">{latest.feedback}</p>
             </div>
           ) : latest.status === 'resubmission_requested' ? (
             <div className="mt-4 rounded-xl border border-brand-200 bg-brand-50 p-4">

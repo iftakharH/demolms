@@ -246,13 +246,13 @@ export function VideoPlayer({
 
   return (
     <div className="space-y-3">
-      <div className="relative overflow-hidden rounded-2xl border border-line bg-ink-950">
+      <div className="relative overflow-hidden rounded-2xl border border-line bg-scrim">
         {failed ? (
           <div className="flex aspect-video flex-col items-center justify-center gap-2 p-6 text-center">
             <p className="text-sm font-medium text-white">Media unavailable</p>
             <p className="max-w-md text-xs text-ink-300">
               The video file for this lesson is missing from public/uploads. An admin can upload it from
-              the course builder, or run <code className="rounded bg-white/10 px-1">npm run assets</code> to
+              the course builder, or run <code className="rounded bg-surface/10 px-1">npm run assets</code> to
               regenerate the sample clip.
             </p>
           </div>
@@ -275,8 +275,8 @@ export function VideoPlayer({
 
         {/* end-of-lesson overlay */}
         {ended && !failed ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-ink-950/85 p-6 text-center backdrop-blur-sm">
-            <CheckCircle2 className="size-10 text-emerald-400" aria-hidden />
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-scrim/85 p-6 text-center backdrop-blur-sm">
+            <CheckCircle2 className="size-10 text-success" aria-hidden />
             <div>
               <p className="text-sm font-semibold text-white">Lesson finished</p>
               {upNext ? (
@@ -383,7 +383,7 @@ export function VideoPlayer({
             </>
           ) : saveState === 'saved' ? (
             <>
-              <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
+              <span className="size-1.5 rounded-full bg-success" aria-hidden />
               Position saved
             </>
           ) : saveState === 'error' ? (

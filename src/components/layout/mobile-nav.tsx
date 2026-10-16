@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ArrowRight, Menu, X } from 'lucide-react';
+import { ThemeSegmented } from '@/components/ui/theme-toggle';
 
 const LINKS = [
   { href: '/courses', label: 'All courses' },
@@ -12,9 +13,9 @@ const LINKS = [
 ];
 
 /**
- * Mobile navigation panel for the public site: a frosted card that unfolds from
- * the bar, its links arriving in a short stagger. Closes on Escape, on a link,
- * on navigation, or on a tap anywhere else.
+ * Mobile navigation panel for the public site: a card that unfolds from the bar,
+ * its links arriving in a short stagger. Closes on Escape, on a link, on
+ * navigation, or on a tap anywhere else.
  */
 export function MobileNav({ signedIn, staff = false }: { signedIn: boolean; staff?: boolean }) {
   // Tying the open state to the route closes the panel on any navigation without
@@ -67,7 +68,7 @@ export function MobileNav({ signedIn, staff = false }: { signedIn: boolean; staf
       </button>
 
       {open ? (
-        <div className="glass-panel animate-drop absolute inset-x-3 top-[calc(100%+0.6rem)] z-40 overflow-hidden rounded-2xl p-2">
+        <div className="popover animate-drop absolute inset-x-3 top-[calc(100%+0.6rem)] z-40 overflow-hidden rounded-2xl p-2">
           <nav className="flex flex-col gap-0.5" aria-label="Site">
             {LINKS.map((link, index) => (
               <Link
@@ -75,7 +76,7 @@ export function MobileNav({ signedIn, staff = false }: { signedIn: boolean; staf
                 href={link.href}
                 onClick={close}
                 style={{ animationDelay: `${40 + index * 45}ms` }}
-                className="animate-pop rounded-xl px-3 py-2.5 text-sm font-medium text-ink-700 transition-colors hover:bg-white/80 hover:text-brand-800"
+                className="animate-pop rounded-xl px-3 py-2.5 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-100/80 hover:text-brand-800"
               >
                 {link.label}
               </Link>
@@ -105,12 +106,20 @@ export function MobileNav({ signedIn, staff = false }: { signedIn: boolean; staf
                   href="/register"
                   onClick={close}
                   style={{ animationDelay: `${70 + LINKS.length * 45}ms` }}
-                  className="animate-pop btn-primary sheen w-full"
+                  className="animate-pop btn-primary w-full"
                 >
                   Create account
                 </Link>
               </div>
             )}
+
+            <div
+              style={{ animationDelay: `${120 + LINKS.length * 45}ms` }}
+              className="animate-pop mt-1 border-t border-line/70 p-1 pt-3"
+            >
+              <p className="kicker mb-2 px-1">Theme</p>
+              <ThemeSegmented />
+            </div>
           </nav>
         </div>
       ) : null}

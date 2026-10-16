@@ -53,7 +53,7 @@ export default async function CertificatePage({
       </div>
 
       {certificate.revokedAt ? (
-        <p className="no-print flex items-start gap-2 rounded-xl border border-rose-200 bg-danger-soft px-4 py-3 text-sm text-danger">
+        <p className="no-print flex items-start gap-2 rounded-xl border border-danger-line bg-danger-soft px-4 py-3 text-sm text-danger">
           <ShieldX className="mt-0.5 size-4 shrink-0" aria-hidden />
           This certificate was revoked on {formatDate(certificate.revokedAt)}
           {certificate.revokeReason ? `: ${certificate.revokeReason}` : '.'}
@@ -117,7 +117,7 @@ export default async function CertificatePage({
           {certificate.revokedAt ? (
             <ShieldX className="mt-0.5 size-5 shrink-0 text-danger" aria-hidden />
           ) : (
-            <ShieldCheck className="mt-0.5 size-5 shrink-0 text-emerald-600" aria-hidden />
+            <ShieldCheck className="mt-0.5 size-5 shrink-0 text-success" aria-hidden />
           )}
           <div>
             <p className="text-sm font-semibold text-ink-900">

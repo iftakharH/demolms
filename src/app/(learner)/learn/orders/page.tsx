@@ -6,6 +6,7 @@ import { query } from '@/lib/db';
 import { EmptyState } from '@/components/ui/empty-state';
 import { OrderStatusBadge, Badge } from '@/components/ui/badge';
 import { fileUrl } from '@/lib/file-url';
+import { CourseArt } from '@/components/course/course-art';
 import { formatDate, formatPence, timeAgo } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -87,7 +88,9 @@ export default async function OrdersPage() {
                     {order.course_thumbnail ? (
                       // eslint-disable-next-line @next/next/no-img-element -- local static asset
                       <img src={fileUrl(order.course_thumbnail)} alt="" className="h-full w-full object-cover" />
-                    ) : null}
+                    ) : (
+                      <CourseArt title={order.course_title} slug={order.course_slug} className="h-full w-full" />
+                    )}
                   </span>
 
                   <div className="min-w-0 flex-1">
@@ -169,7 +172,7 @@ function TimelineStep({
 }) {
   const Icon = icon ?? Check;
   const tint =
-    tone === 'info' ? 'text-info' : tone === 'muted' ? 'text-ink-400' : 'text-emerald-600';
+    tone === 'info' ? 'text-info' : tone === 'muted' ? 'text-ink-400' : 'text-success';
 
   return (
     <li className="flex items-center gap-2">

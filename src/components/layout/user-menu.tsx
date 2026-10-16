@@ -54,7 +54,7 @@ export function UserMenu({
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="flex items-center gap-2 rounded-full border border-white/70 bg-white/60 p-1 pr-2.5 text-sm font-medium text-ink-800 backdrop-blur-md transition duration-200 hover:border-brand-200 hover:bg-white/90 active:scale-[0.98]"
+        className="flex items-center gap-2 rounded-full border border-line bg-surface p-1 pr-2.5 text-sm font-medium text-ink-800 transition duration-[130ms] hover:border-ink-300"
       >
         <Avatar name={name} src={avatarPath} size="sm" />
         <span className="hidden max-w-28 truncate sm:block">{name.split(' ')[0]}</span>
@@ -67,7 +67,7 @@ export function UserMenu({
       {open ? (
         <div
           role="menu"
-          className="glass-panel animate-drop fixed inset-x-3 top-[4.4rem] z-40 overflow-hidden rounded-2xl sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-64"
+          className="popover animate-drop fixed inset-x-3 top-[4.4rem] z-40 overflow-hidden rounded-2xl sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-64"
         >
           <div className="border-b border-line px-4 py-3">
             <p className="truncate text-sm font-semibold text-ink-900">{name}</p>

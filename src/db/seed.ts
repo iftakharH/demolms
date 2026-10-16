@@ -70,44 +70,6 @@ function orderPublicId(): string {
 
 /* ------------------------------------------------------------------ assets */
 
-/** Abstract SVG cover art per course: deterministic duotone gradient + shapes. */
-function courseCover(index: number): string {
-  const palettes = [
-    ['#4c31af', '#8b72ff'],
-    ['#1f3a8a', '#5b8def'],
-    ['#0f766e', '#2dd4bf'],
-    ['#7c2d6b', '#e879c9'],
-    ['#b45309', '#fbbf24'],
-    ['#3730a3', '#818cf8'],
-    ['#155e75', '#38bdf8'],
-    ['#831843', '#f472b6'],
-    ['#134e4a', '#34d399'],
-    ['#4a1d1d', '#f87171'],
-  ];
-  const [from, to] = palettes[index % palettes.length];
-  const blob = (cx: number, cy: number, r: number, fill: string, op: number) =>
-    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" opacity="${op}"/>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${from}"/>
-      <stop offset="1" stop-color="${to}"/>
-    </linearGradient>
-    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
-    </linearGradient>
-  </defs>
-  <rect width="800" height="450" fill="url(#g)"/>
-  ${blob(640, 90, 190, '#ffffff', 0.1)}
-  ${blob(110, 400, 230, '#000000', 0.12)}
-  <rect x="70" y="70" width="240" height="240" rx="48" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="2"/>
-  <rect x="140" y="140" width="240" height="240" rx="48" fill="#ffffff" fill-opacity="0.08"/>
-  <polygon points="0,450 800,120 800,450" fill="#000000" opacity="0.10"/>
-  <polygon points="0,450 800,200 800,320" fill="url(#sheen)"/>
-</svg>`;
-}
-
 const VTT = `WEBVTT
 
 00:00:00.000 --> 00:00:05.000
@@ -198,15 +160,8 @@ function pdfCode(doc: PDFKit.PDFDocument, code: string) {
 }
 
 async function writeAllAssets(): Promise<void> {
-  // covers
-  fs.mkdirSync(path.join(STORAGE_ROOT, 'thumbnails'), { recursive: true });
-  SEED_COURSES.forEach((course, i) => {
-    fs.writeFileSync(
-      path.join(STORAGE_ROOT, 'thumbnails', `${course.slug}.svg`),
-      courseCover(i),
-      'utf8',
-    );
-  });
+  // Covers are generative now (components/course/course-art.tsx) and no longer
+  // written to disk: seeded courses carry thumbnail_path = null and draw their own.
 
   // captions + a generic assignment brief sample (zip placeholder is a text file)
   fs.mkdirSync(path.join(STORAGE_ROOT, 'videos'), { recursive: true });
@@ -489,7 +444,7 @@ export async function runSeed(log: (msg: string) => void = console.log): Promise
       instructor_bio_md: course.instructorBio,
       level: course.level,
       price_pence: course.pricePence,
-      thumbnail_path: `thumbnails/${course.slug}.svg`,
+      thumbnail_path: null,
       tags: course.tags.join(','),
       outcomes_md: course.outcomes.join('\n'),
       requirements_md: course.requirements,

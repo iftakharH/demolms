@@ -49,12 +49,12 @@ export default async function AdminUserDetailPage({
       </Link>
 
       {query.returned === '1' ? (
-        <p className="rounded-xl border border-emerald-200 bg-success-soft px-4 py-3 text-sm text-emerald-800">
+        <p className="rounded-xl border border-success-line bg-success-soft px-4 py-3 text-sm text-success-strong">
           Support session ended - you are back in the admin console.
         </p>
       ) : null}
       {typeof query.error === 'string' ? (
-        <p className="rounded-xl border border-rose-200 bg-danger-soft px-4 py-3 text-sm text-danger">
+        <p className="rounded-xl border border-danger-line bg-danger-soft px-4 py-3 text-sm text-danger">
           {query.error}
         </p>
       ) : null}

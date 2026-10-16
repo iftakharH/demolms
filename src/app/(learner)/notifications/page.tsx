@@ -36,16 +36,16 @@ interface NotificationRow {
 
 const TYPE_STYLE: Record<string, { icon: typeof Info; tint: string; label: string }> = {
   welcome: { icon: Sparkles, tint: 'bg-brand-50 text-brand-700', label: 'Welcome' },
-  certificate_issued: { icon: Award, tint: 'bg-emerald-50 text-emerald-700', label: 'Certificate' },
+  certificate_issued: { icon: Award, tint: 'bg-success-soft text-success-strong', label: 'Certificate' },
   certificate_revoked: { icon: ShieldCheck, tint: 'bg-danger-soft text-danger', label: 'Certificate' },
   order_paid: { icon: Receipt, tint: 'bg-info-soft text-info', label: 'Payment' },
   refund_processed: { icon: Undo2, tint: 'bg-info-soft text-info', label: 'Refund' },
-  assignment_graded: { icon: BadgeCheck, tint: 'bg-emerald-50 text-emerald-700', label: 'Grading' },
-  quiz_reviewed: { icon: BadgeCheck, tint: 'bg-emerald-50 text-emerald-700', label: 'Grading' },
+  assignment_graded: { icon: BadgeCheck, tint: 'bg-success-soft text-success-strong', label: 'Grading' },
+  quiz_reviewed: { icon: BadgeCheck, tint: 'bg-success-soft text-success-strong', label: 'Grading' },
   quiz_submitted: { icon: Info, tint: 'bg-warning-soft text-warning', label: 'Quiz' },
   assignment_submitted: { icon: Info, tint: 'bg-warning-soft text-warning', label: 'Assignment' },
   enrolment_created: { icon: Sparkles, tint: 'bg-brand-50 text-brand-700', label: 'Enrolment' },
-  course_completed: { icon: Award, tint: 'bg-emerald-50 text-emerald-700', label: 'Completed' },
+  course_completed: { icon: Award, tint: 'bg-success-soft text-success-strong', label: 'Completed' },
   security: { icon: ShieldCheck, tint: 'bg-warning-soft text-warning', label: 'Security' },
 };
 

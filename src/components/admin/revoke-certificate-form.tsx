@@ -38,7 +38,7 @@ export function RevokeCertificateForm({
           aria-invalid={state.fieldErrors?.reason ? true : undefined}
         />
         {state.error ? <p className="mt-1.5 text-xs text-danger">{state.error}</p> : null}
-        {state.ok ? <p className="mt-1.5 text-xs text-emerald-700">{state.message}</p> : null}
+        {state.ok ? <p className="mt-1.5 text-xs text-success-strong">{state.message}</p> : null}
       </div>
 
       <SubmitButton className="btn-danger btn-sm" pendingLabel="Revoking...">

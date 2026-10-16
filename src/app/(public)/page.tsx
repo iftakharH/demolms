@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowRight, Award, BadgeCheck, Layers, Mail, Sparkles, Users } from 'lucide-react';
 import { catalog, categoriesWithCounts, featuredCourses, newestCourses } from '@/lib/queries/catalog';
 import { CourseCard } from '@/components/course/course-card';
+import { CourseArt } from '@/components/course/course-art';
 import { queryOne } from '@/lib/db';
 import { formatPenceShort, formatTotalDuration, timeAgo } from '@/lib/format';
 import { getCurrentUser } from '@/lib/auth';
@@ -113,7 +114,13 @@ export default async function HomePage() {
                   alt=""
                   className="aspect-[16/10] w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                 />
-              ) : null}
+              ) : (
+                <CourseArt
+                  title={featured[0].title}
+                  slug={featured[0].slug}
+                  className="aspect-[16/10] w-full transition duration-300 group-hover:scale-[1.02]"
+                />
+              )}
               <div className="p-5">
                 <span className="badge bg-brand-100 text-brand-800">Featured course</span>
                 <h2 className="mt-3 text-lg font-semibold text-ink-900">{featured[0].title}</h2>
@@ -252,9 +259,9 @@ export default async function HomePage() {
 
         {/* --------------------------------------------------------------- CTA */}
         <section className="py-12">
-          <div className="card flex flex-col items-start justify-between gap-6 bg-ink-950 p-8 text-white sm:flex-row sm:items-center">
+          <div className="card flex flex-col items-start justify-between gap-6 bg-scrim p-8 text-white sm:flex-row sm:items-center">
             <div className="flex items-start gap-4">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-surface/10 text-white">
                 <Users className="size-5" aria-hidden />
               </span>
               <div>
@@ -266,7 +273,7 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="flex shrink-0 gap-2">
-              <Link href="/register" className="btn bg-white text-ink-900 hover:bg-white/90">
+              <Link href="/register" className="btn bg-surface text-ink-900 hover:bg-white/90">
                 Create account
               </Link>
               <Link href="/login" className="btn border border-white/25 text-white hover:bg-white/10">

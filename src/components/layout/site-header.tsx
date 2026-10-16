@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import { Brand } from './brand';
 import { AnnouncementBanner } from './announcement-banner';
-import { GlassHeader } from './glass-header';
+import { NavShell } from './nav-shell';
 import { SupportBanner } from './support-banner';
 import { NavLinks, type SiteNavItem } from './nav-links';
 import { MobileNav } from './mobile-nav';
 import { UserMenu } from './user-menu';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { NotificationBellServer } from '@/components/notifications/notification-bell-server';
 import { getCurrentUser } from '@/lib/auth';
 import { isStaffRole } from '@/lib/types';
@@ -29,13 +30,18 @@ export async function SiteHeader({
 
   return (
     <>
-      <GlassHeader wide={wide}>
+      <NavShell wide={wide}>
         <div className="flex items-center gap-8">
           <Brand />
           <NavLinks items={NAV} />
         </div>
 
         <div className="flex items-center gap-2">
+          {/* the phone sheet carries a labelled theme row, so the compact control
+              only appears once there is room for it */}
+          <span className="hidden sm:block">
+            <ThemeToggle />
+          </span>
           {user ? (
             <>
               {staff ? (
@@ -60,14 +66,14 @@ export async function SiteHeader({
               <Link href="/login" className="btn-ghost">
                 Log in
               </Link>
-              <Link href="/register" className="btn-primary sheen">
+              <Link href="/register" className="btn-primary">
                 Create account
               </Link>
             </div>
           )}
           <MobileNav signedIn={Boolean(user)} staff={staff} />
         </div>
-      </GlassHeader>
+      </NavShell>
       {showAnnouncement ? <AnnouncementBanner /> : null}
       <SupportBanner />
     </>

@@ -105,7 +105,7 @@ export function QuizForm({
       <input type="hidden" name="lesson_id" value={lessonId} />
 
       {state.error ? (
-        <p className="rounded-xl border border-rose-200 bg-danger-soft px-4 py-3 text-sm text-danger">
+        <p className="rounded-xl border border-danger-line bg-danger-soft px-4 py-3 text-sm text-danger">
           {state.error}
         </p>
       ) : null}

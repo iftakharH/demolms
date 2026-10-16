@@ -5,16 +5,21 @@ import { ToastProvider } from '@/components/ui/toast';
 import { APP_URL } from '@/lib/env';
 
 /**
- * Inter, self-hosted (src/fonts/Inter-Variable.woff2) so the app never needs
- * the network. Fetched once by scripts/fetch-fonts.mjs.
+ * Instrument Sans, self-hosted (src/fonts/InstrumentSans-Variable.woff2) so the
+ * app never needs the network. One family for the whole product - see DESIGN.md.
  */
-const inter = localFont({
-  src: '../fonts/Inter-Variable.woff2',
+const instrument = localFont({
+  src: '../fonts/InstrumentSans-Variable.woff2',
   display: 'swap',
-  weight: '100 900',
-  variable: '--font-inter',
-  fallback: ['ui-sans-serif', 'system-ui', 'Segoe UI', 'Arial', 'sans-serif'],
+  weight: '400 700',
+  variable: '--font-instrument',
 });
+
+/**
+ * Applied before the body paints, so a remembered dark theme never flashes
+ * white. The toggle in components/ui/theme-toggle.tsx writes the same key.
+ */
+const THEME_SCRIPT = `(function(){try{var c=localStorage.getItem('demolms-theme')||'system';var d=c==='dark'||(c==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;if(d){r.setAttribute('data-theme','dark')}r.dataset.themeChoice=c}catch(e){}})();`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
@@ -45,7 +50,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="en-GB" data-scroll-behavior="smooth" className={`${inter.variable} h-full`}>
+    <html
+      lang="en-GB"
+      data-scroll-behavior="smooth"
+      className={`${instrument.variable} h-full`}
+      suppressHydrationWarning
+    >
+      {/* In <head>, before any body content is parsed, so a remembered dark theme
+          never flashes light. Kept out of the body: React warns about script tags
+          rendered as part of a component tree. */}
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="flex min-h-full flex-col">
         <ToastProvider>{children}</ToastProvider>
       </body>
